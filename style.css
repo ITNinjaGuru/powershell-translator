@@ -1,23 +1,22 @@
-/* --- 1. Import a Modern Font & Define CSS Variables --- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+/* Import Fonts & Define Variables */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Orbitron:wght@400;700&display=swap');
 
 :root {
     --background-color: #1a1a2d;
     --primary-accent: #7a5af8;
     --primary-accent-hover: #9177ff;
-    --glass-background: rgba(42, 42, 62, 0.5); /* Semi-transparent */
+    --glass-background: rgba(42, 42, 62, 0.5);
     --glass-border: rgba(255, 255, 255, 0.1);
-    --text-primary: #e0e0e0;
+    --text-primary: #f0f0f0;
     --text-secondary: #a9c5ff;
 }
 
-/* --- 2. General Body & Background Styling --- */
+/* General Styling */
 body {
-    font-family: 'Inter', sans-serif; /* Use the new font */
-    background-color: var(--background-color);
-    background-image: 
-        radial-gradient(circle at 10% 20%, rgba(122, 90, 248, 0.2), transparent 25%),
-        radial-gradient(circle at 90% 80%, rgba(122, 90, 248, 0.2), transparent 25%);
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(45deg, #1a1a2d, #2a2a3d, #1a1a2d);
+    background-size: 200% 200%;
+    animation: gradientShift 15s ease infinite;
     color: var(--text-primary);
     margin: 0;
     padding: 20px;
@@ -25,28 +24,58 @@ body {
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
 }
 
-/* --- 3. Keyframe Animation for Title --- */
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+#particles-js {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
 }
 
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Header & Tagline */
 h1 {
+    font-family: 'Orbitron', sans-serif;
     color: var(--text-secondary);
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     font-weight: 700;
-    letter-spacing: 1px;
-    animation: fadeInDown 1s ease-out; /* Apply the animation */
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    animation: fadeInDown 1s ease-out;
 }
 
+.tagline {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 0 10px rgba(122, 90, 248, 0.5);
+    animation: fadeInUp 0.6s ease-out forwards;
+    animation-delay: 0.2s;
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Container & Elements */
 .container {
     display: flex;
     justify-content: center;
@@ -56,7 +85,16 @@ h1 {
     max-width: 1200px;
 }
 
-/* --- 4. The Glassmorphism Effect for Text Areas --- */
+.container > * {
+    opacity: 0;
+    animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.container > *:nth-child(1) { animation-delay: 0.3s; }
+.container > *:nth-child(2) { animation-delay: 0.4s; }
+.container > *:nth-child(3) { animation-delay: 0.5s; }
+
+/* Textareas */
 textarea {
     width: 45%;
     height: 60vh;
@@ -67,24 +105,25 @@ textarea {
     resize: none;
     border-radius: 12px;
     border: 1px solid var(--glass-border);
-    
-    /* The Glassmorphism */
-    background: var(--glass-background);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px); /* For Safari */
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-
-    /* Fluid transition for focus effect */
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background: rgba(42, 42, 62, 0.8);
+    transition: opacity 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-textarea:focus {
+@supports (backdrop-filter: blur(10px)) {
+    textarea {
+        background: var(--glass-background);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+}
+
+textarea:focus, textarea:hover {
     outline: none;
     border-color: var(--primary-accent);
-    box-shadow: 0 0 15px rgba(122, 90, 248, 0.4);
+    box-shadow: 0 0 20px rgba(122, 90, 248, 0.6), 0 0 30px rgba(122, 90, 248, 0.3);
 }
 
-/* --- 5. Modern, Fluid Buttons --- */
+/* Buttons & Upload Label */
 button, .upload-label {
     padding: 12px 24px;
     font-size: 16px;
@@ -94,15 +133,22 @@ button, .upload-label {
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    
-    /* Fluid transition for hover effects */
     transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 button:hover, .upload-label:hover {
     background-color: var(--primary-accent-hover);
-    transform: translateY(-3px); /* Make it "lift" on hover */
-    box-shadow: 0 10px 20px rgba(122, 90, 248, 0.2);
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px rgba(122, 90, 248, 0.5);
+}
+
+button:active, .upload-label:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+button:focus, .upload-label:focus, #ps-upload:focus + .upload-label {
+    outline: 2px solid var(--primary-accent);
+    outline-offset: 2px;
 }
 
 button:disabled {
@@ -113,7 +159,7 @@ button:disabled {
     box-shadow: none;
 }
 
-/* --- 6. Styling for Upload/Download Sections --- */
+/* Upload & Download Sections */
 .upload-section, .download-section {
     margin-bottom: 20px;
     width: 100%;
@@ -121,6 +167,180 @@ button:disabled {
     text-align: center;
 }
 
-.upload-label {
-    display: inline-block;
+/* Toggle Section */
+.toggle-section {
+    margin-bottom: 20px;
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.toggle-section label {
+    font-size: 1rem;
+    margin-right: 10px;
+}
+
+.toggle-section input[type="checkbox"] {
+    appearance: none;
+    width: 40px;
+    height: 20px;
+    background: #3a4a6b;
+    border-radius: 20px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.toggle-section input[type="checkbox"]:checked {
+    background: var(--primary-accent);
+}
+
+.toggle-section input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.3s ease;
+}
+
+.toggle-section input[type="checkbox"]:checked::before {
+    transform: translateX(20px);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--primary-accent);
+    border-top: 4px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background: var(--glass-background);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    color: var(--text-primary);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.notification.show {
+    opacity: 1;
+}
+
+/* Social Bar */
+.social-bar {
+    position: fixed;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.social-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    text-decoration: none;
+    font-size: 1.2rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.social-icon:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(122, 90, 248, 0.5);
+}
+
+.github-icon { background: #333; }
+.github-icon:hover { background: #444; }
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    textarea {
+        width: 100%;
+        height: 30vh;
+    }
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    .tagline {
+        font-size: 1rem;
+    }
+
+    .social-bar {
+        right: 10px;
+        gap: 8px;
+    }
+
+    .social-icon {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+
+    .notification {
+        top: 10px;
+        right: 10px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 10px;
+    }
+
+    button, .upload-label {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+
+    .tagline {
+        font-size: 0.9rem;
+    }
+
+    .toggle-section label {
+        font-size: 0.9rem;
+    }
 }

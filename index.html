@@ -1,27 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>PowerShell to Python Translator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Convert PowerShell scripts to Python instantly with PoSh to Py. Fast, free, and futuristic!">
+    <meta property="og:title" content="PoSh to Py - Convert PowerShell to Python">
+    <meta property="og:description" content="Instantly convert PowerShell scripts to Python with a sleek, futuristic interface.">
+    <meta property="og:image" content="URL_TO_YOUR_LOGO">
+    <meta property="og:url" content="YOUR_WEBSITE_URL">
+    <title>PoSh to Py</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>PowerShell to Python Translator</h1>
-
-    <div class="upload-section">
-        <label for="ps-upload" class="upload-label">Upload a .ps1 File</label>
-        <input type="file" id="ps-upload" accept=".ps1" hidden>
-    </div>
-
-    <div class="container">
-        <textarea id="ps-input" placeholder="Paste your PowerShell script here, or upload a file."></textarea>
-        <button id="translate-btn">Translate →</button>
-        <textarea id="py-output" placeholder="Python script will appear here..." readonly></textarea>
-    </div>
-
-    <div class="download-section">
-        <button id="download-btn" disabled>Download .py File</button>
-    </div>
-    
+    <div id="particles-js"></div>
+    <header>
+        <h1>PoSh to Py</h1>
+        <p class="tagline">Convert PowerShell to Python in Seconds!</p>
+    </header>
+    <main>
+        <div class="toggle-section">
+            <label for="live-preview">Enable Live Preview</label>
+            <input type="checkbox" id="live-preview" checked>
+        </div>
+        <div class="upload-section">
+            <label for="ps-upload" class="upload-label">Upload a .ps1 File</label>
+            <input type="file" id="ps-upload" accept=".ps1" hidden>
+        </div>
+        <div class="container">
+            <textarea id="ps-input" placeholder="Paste your PowerShell script here, or upload a file."></textarea>
+            <button id="translate-btn">Translate →</button>
+            <textarea id="py-output" placeholder="Python script will appear here..." readonly></textarea>
+        </div>
+        <div class="loading-spinner" id="loading-spinner" style="display: none;">
+            <div class="spinner"></div>
+        </div>
+        <div class="download-section">
+            <button id="download-btn" disabled>Download .py File</button>
+        </div>
+        <div class="notification" id="notification" style="display: none;"></div>
+    </main>
+    <aside class="social-bar">
+        <a href="https://x.com/share" class="social-icon x-icon" title="Share on X">X</a>
+        <a href="https://github.com" class="social-icon github-icon" title="Share on GitHub">GH</a>
+    </aside>
+    <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
