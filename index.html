@@ -6,11 +6,22 @@
 </head>
 <body>
     <h1>PowerShell to Python Translator</h1>
+
+    <div class="upload-section">
+        <label for="ps-upload" class="upload-label">Upload a .ps1 File</label>
+        <input type="file" id="ps-upload" accept=".ps1" hidden>
+    </div>
+
     <div class="container">
-        <textarea id="ps-input" placeholder="Paste your PowerShell script here..."></textarea>
+        <textarea id="ps-input" placeholder="Paste your PowerShell script here, or upload a file."></textarea>
         <button id="translate-btn">Translate →</button>
         <textarea id="py-output" placeholder="Python script will appear here..." readonly></textarea>
     </div>
+
+    <div class="download-section">
+        <button id="download-btn" disabled>Download .py File</button>
+    </div>
+    
     <script src="script.js"></script>
 </body>
 </html>

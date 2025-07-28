@@ -56,3 +56,22 @@ button:disabled {
     color: #8c8c8c;
     cursor: not-allowed;
 }
+.upload-section, .download-section {
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 1200px;
+    text-align: center;
+}
+
+.upload-label {
+    padding: 10px 20px;
+    background-color: #3d4a5f;
+    color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.upload-label:hover {
+    background-color: #52647f;
+}
