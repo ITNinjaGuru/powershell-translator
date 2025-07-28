@@ -11,7 +11,7 @@ exports.handler = async function(event) {
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
 
-        const prompt = `Translate the following PowerShell script into Python. Provide only the raw Python code as the output, with no explanations or markdown formatting. PowerShell Script: \n\n${code}`;
+        const prompt = `You are a coding and scripting expert.  You verify your code before releasing it to your customers.  Your job is to translate the following PowerShell script into Python. Provide only the raw, tested and verified accurate, Python code as the output, with no explanations or markdown formatting. PowerShell Script: \n\n${code}`;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
