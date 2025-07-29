@@ -1,95 +1,104 @@
+// Import all necessary client libraries
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 const OpenAI = require("openai");
-const retry = require("async-retry");
+const Anthropic = require('@anthropic-ai/sdk');
 
+// Initialize all API clients
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const xai = new OpenAI({
-    baseURL: "https://api.x.ai/v1/chat/completions",
+    baseURL: "https://api.xai.com/v1",
     apiKey: process.env.GROK_API_KEY,
+});
+const anthropic = new Anthropic({
+    apiKey: process.env.CLAUDE_API_KEY,
 });
 
 exports.handler = async (event) => {
-    if (event.httpMethod !== "POST") {
-        return {
-            statusCode: 405,
-            body: JSON.stringify({ error: "Method Not Allowed" }),
-            headers: { "Access-Control-Allow-Origin": "*" }
-        };
+    if (event.httpMethod !== 'POST') {
+        return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     try {
-        const { action, code, inputLang, outputLang } = JSON.parse(event.body);
-
-        // Validate input
-        if (!action || !code || !inputLang || (action === "translate" && !outputLang)) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ error: "Missing required fields" }),
-                headers: { "Access-Control-Allow-Origin": "*" }
-            };
-        }
+        const { ai_provider, action, code, inputLang, outputLang } = JSON.parse(event.body);
 
         let userPrompt;
+        // This prompt-building logic is the same for all models
         switch (action) {
-            case "translate":
+            case 'translate':
                 userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.`;
                 break;
-            case "explain":
+            case 'explain':
                 userPrompt = `Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does.`;
                 break;
-            case "debug":
+            case 'debug':
                 userPrompt = `Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single code block, and then below it, explain what you changed and why.`;
                 break;
-            case "add_comments":
+            case 'add_comments':
                 userPrompt = `Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single code block.`;
                 break;
             default:
-                return {
-                    statusCode: 400,
-                    body: JSON.stringify({ error: "Invalid action specified" }),
-                    headers: { "Access-Control-Allow-Origin": "*" }
-                };
+                return { statusCode: 400, body: JSON.stringify({ error: "Invalid action specified." }) };
         }
-
+        
         const fullPrompt = `${userPrompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
+        let resultText;
+        const systemPrompt = "You are an expert programming assistant.";
 
-        const chatCompletion = await retry(
-            async () => {
-                return await xai.chat.completions.create({
+        // --- API ROUTER ---
+        switch (ai_provider) {
+            case 'grok':
+                const grokCompletion = await xai.chat.completions.create({
+                    messages: [{ role: "user", content: fullPrompt }],
+                    model: "grok-4-0709", 
+                });
+                resultText = grokCompletion.choices[0].message.content;
+                break;
+
+            case 'gemini':
+                const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+                const geminiResult = await geminiModel.generateContent(fullPrompt);
+                const geminiResponse = await geminiResult.response;
+                resultText = geminiResponse.text();
+                break;
+
+            case 'chatgpt':
+                const openaiCompletion = await openai.chat.completions.create({
                     messages: [
-                        { role: "system", content: "You are an expert programming assistant." },
+                        { role: "system", content: systemPrompt },
                         { role: "user", content: fullPrompt }
                     ],
-                    model: "grok-4", // Verify model name with xAI API docs
+                    model: "gpt-4o", 
                 });
-            },
-            {
-                retries: 3,
-                factor: 2,
-                minTimeout: 1000,
-                onRetry: (err) => console.log(`Retrying due to: ${err.message}`)
-            }
-        );
+                resultText = openaiCompletion.choices[0].message.content;
+                break;
+            
+            case 'claude':
+                const claudeCompletion = await anthropic.messages.create({
+                    // UPDATED: Using the correct Sonnet 4 model name
+                    model: "claude-sonnet-4-20250514",
+                    max_tokens: 4096,
+                    system: systemPrompt,
+                    messages: [{ role: "user", content: fullPrompt }],
+                });
+                resultText = claudeCompletion.content[0].text;
+                break;
 
-        let result = chatCompletion.choices[0].message.content;
-        if (action === "translate") {
-            result = result.replace(/```[\s\S]*?\n|```/g, "").trim();
+            default:
+                return { statusCode: 400, body: JSON.stringify({ error: "Invalid AI provider specified." }) };
         }
 
+        // Return the final result to the frontend
         return {
             statusCode: 200,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "POST",
-                "Access-Control-Allow-Headers": "Content-Type"
-            },
-            body: JSON.stringify({ result })
+            body: JSON.stringify({ pythonCode: resultText }) 
         };
+
     } catch (error) {
         console.error("API call failed:", error);
-        const errorMessage = error.response?.data?.error || error.message || "An error occurred";
         return {
-            statusCode: error.response?.status || 500,
-            headers: { "Access-Control-Allow-Origin": "*" },
-            body: JSON.stringify({ error: errorMessage })
+            statusCode: 500,
+            body: JSON.stringify({ error: "An error occurred with the selected AI provider." })
         };
     }
 };

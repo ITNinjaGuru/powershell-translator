@@ -9,27 +9,19 @@ const livePreviewToggle = document.getElementById('live-preview');
 const actionSelect = document.getElementById('action-select');
 const inputLangSelect = document.getElementById('input-lang');
 const outputLangSelect = document.getElementById('output-lang');
+// NEW: Get reference to the AI provider dropdown
+const aiProviderSelect = document.getElementById('ai-provider-select');
 
-// Global variable to store the name of an uploaded file, without extension
 let uploadedFileName = null;
-
-// Simple cache to store recent API results
 const translationCache = new Map();
 const maxCacheSize = 50;
 
-/**
- * Sends a payload to the backend API function.
- * Checks cache first to avoid redundant calls.
- * @param {object} payload The data to send to the API.
- * @returns {Promise<string>} The text result from the API.
- */
 async function callApi(payload) {
     const cacheKey = JSON.stringify(payload);
     if (translationCache.has(cacheKey)) {
         return translationCache.get(cacheKey);
     }
 
-    // Replace '/.netlify/functions/translate' with your actual API endpoint
     const response = await fetch('/.netlify/functions/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -37,7 +29,8 @@ async function callApi(payload) {
     });
 
     if (!response.ok) {
-        throw new Error(`API Error: Server responded with status ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error || `API Error: Server responded with status ${response.status}`);
     }
 
     const data = await response.json();
@@ -51,10 +44,6 @@ async function callApi(payload) {
     return result;
 }
 
-/**
- * Displays a temporary notification message on the screen.
- * @param {string} message The message to display.
- */
 function showNotification(message) {
     const notification = document.getElementById('notification');
     notification.textContent = message;
@@ -64,15 +53,12 @@ function showNotification(message) {
     }, 3000);
 }
 
-// Hides the "To:" language dropdown if the action is not 'translate'
 actionSelect.addEventListener('change', () => {
     const isTranslate = actionSelect.value === 'translate';
     outputLangSelect.disabled = !isTranslate;
     outputLangSelect.parentElement.style.display = isTranslate ? 'flex' : 'none';
 });
 
-// --- UPDATED: File upload listener ---
-// This now ONLY loads the file content and does NOT trigger an API call.
 uploadInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) {
@@ -89,9 +75,6 @@ uploadInput.addEventListener('change', (event) => {
     reader.readAsText(file);
 });
 
-/**
- * The main function to process the user's request.
- */
 async function handleApiCall() {
     const code = codeInput.value;
     if (!code.trim()) {
@@ -105,7 +88,9 @@ async function handleApiCall() {
     translateButton.disabled = true;
     downloadButton.disabled = true;
 
+    // Construct the payload, now including the AI provider
     const payload = {
+        ai_provider: aiProviderSelect.value, // NEW: Add selected provider
         action: actionSelect.value,
         code: code,
         inputLang: inputLangSelect.value,
@@ -126,7 +111,6 @@ async function handleApiCall() {
     }
 }
 
-// Live Preview & Paste Logic
 let debounceTimeout;
 let isPasting = false;
 
@@ -140,19 +124,15 @@ codeInput.addEventListener('input', () => {
         isPasting = false;
         return;
     }
-
     uploadedFileName = null; 
     if (!livePreviewToggle.checked) return;
     clearTimeout(debounceTimeout);
     debounceTimeout = setTimeout(handleApiCall, 1000);
 });
 
-// Trigger the API call when the main button is clicked
 translateButton.addEventListener('click', handleApiCall);
 
-// Handles downloading the output content
 downloadButton.addEventListener('click', () => {
-    // ... download logic remains the same ...
     const outputContent = pythonOutput.value;
     if (!outputContent || outputContent.startsWith('Error:')) {
         showNotification('No valid code to download.');
@@ -184,18 +164,16 @@ downloadButton.addEventListener('click', () => {
     URL.revokeObjectURL(link.href);
 });
 
-// Social sharing placeholders
 const xIcon = document.querySelector('.x-icon');
 if (xIcon) { xIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on X coming soon!'); }); }
 const githubIcon = document.querySelector('.github-icon');
 if (githubIcon) { githubIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on GitHub coming soon!'); }); }
 
-// Initialize particle.js background
 if (document.getElementById('particles-js')) {
     particlesJS('particles-js', {
         particles: {
             number: { value: 80, density: { enable: true, value_area: 800 } },
-            color: { value: '#7DF9FF' }, // Ghost in the Code accent
+            color: { value: '#7DF9FF' },
             shape: { type: 'circle' },
             opacity: { value: 0.5, random: true },
             size: { value: 3, random: true },

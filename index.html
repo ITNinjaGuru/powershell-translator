@@ -20,12 +20,23 @@
     <!-- Main wrapper for the flexbox layout -->
     <div class="app-wrapper">
         
-        <!-- NEW: Sidebar for all controls -->
+        <!-- Sidebar for all controls -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h1>PoSh to Py</h1>
             </div>
             <div class="controls-container">
+                <!-- AI Provider Dropdown -->
+                <div class="control-group">
+                    <label for="ai-provider-select">AI Provider</label>
+                    <select id="ai-provider-select">
+                        <option value="grok">Grok (xAI)</option>
+                        <option value="gemini">Gemini (Google)</option>
+                        <option value="chatgpt">ChatGPT (OpenAI)</option>
+                        <!-- NEW: Added Claude -->
+                        <option value="claude" selected>Claude (Anthropic)</option>
+                    </select>
+                </div>
                 <div class="control-group">
                     <label for="action-select">Action</label>
                     <select id="action-select">
