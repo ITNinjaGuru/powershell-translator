@@ -2,7 +2,7 @@ const OpenAI = require("openai");
 const retry = require("async-retry");
 
 const xai = new OpenAI({
-    baseURL: "https://api.xai.com/v1",
+    baseURL: "https://api.x.ai/v1/chat/completions",
     apiKey: process.env.GROK_API_KEY,
 });
 
