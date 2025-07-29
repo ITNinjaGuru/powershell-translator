@@ -1,10 +1,9 @@
-// 1. Import the OpenAI client library
-const { OpenAI } = require("openai");
+// 1. Import the Google Generative AI client library
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // 2. Initialize the client with your API key from environment variables
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
+// Make sure you have GEMINI_API_KEY set in your Netlify environment
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 exports.handler = async (event) => {
     // Make sure the request is a POST request
@@ -21,16 +20,16 @@ exports.handler = async (event) => {
         // 4. Build the prompt dynamically based on the selected action
         switch (action) {
             case 'translate':
-                userPrompt = `You are a coding expert. Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.`;
+                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.`;
                 break;
             case 'explain':
-                userPrompt = `You are a coding expert. Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does.`;
+                userPrompt = `Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does.`;
                 break;
             case 'debug':
-                userPrompt = `You are a coding expert. Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single code block, and then below it, explain what you changed and why.`;
+                userPrompt = `Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single code block, and then below it, explain what you changed and why.`;
                 break;
             case 'add_comments':
-                userPrompt = `You are a coding expert. Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single code block.`;
+                userPrompt = `Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single code block.`;
                 break;
             default:
                 return { statusCode: 400, body: JSON.stringify({ error: "Invalid action specified." }) };
@@ -39,25 +38,19 @@ exports.handler = async (event) => {
         // Append the user's code to the instruction prompt
         const fullPrompt = `${userPrompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
 
-        // 5. Call the OpenAI Chat Completions API
-        const completion = await openai.chat.completions.create({
-            // Using gpt-3.5-turbo is a good, cost-effective starting point.
-            // You can upgrade to "gpt-4" or other models later.
-            model: "gpt-4o", 
-            messages: [
-                { role: "system", content: "You are an expert programmer and assistant." },
-                { role: "user", content: fullPrompt }
-            ],
-        });
+        // 5. Select the Gemini model and call the API
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+        const result = await model.generateContent(fullPrompt);
+        const response = await result.response;
         
-        // 6. Extract the text from the OpenAI response
-        const result = completion.choices[0].message.content;
+        // 6. Extract the text from the Gemini response
+        const text = response.text();
 
         // 7. Return the result to the frontend
         return {
             statusCode: 200,
             // The key here ('pythonCode') must match what the frontend script expects
-            body: JSON.stringify({ pythonCode: result }) 
+            body: JSON.stringify({ pythonCode: text }) 
         };
 
     } catch (error) {
