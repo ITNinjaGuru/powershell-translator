@@ -26,7 +26,11 @@ exports.handler = async (event) => {
         // This prompt-building logic is the same for all models
         switch (action) {
             case 'translate':
-                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text. If the code requires specific modules or nodejs modules, make sure to add that in the comments of the script file as commented out lines.`;
+                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.`;
+                break;
+            // NEW: Case for the optimize action
+            case 'optimize':
+                userPrompt = `Analyze the following ${inputLang} code and suggest optimizations for performance, readability, and best practices. Provide the optimized code in a single code block, and then below it, explain the changes you made.`;
                 break;
             case 'explain':
                 userPrompt = `Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does.`;
@@ -43,7 +47,7 @@ exports.handler = async (event) => {
         
         const fullPrompt = `${userPrompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
         let resultText;
-        const systemPrompt = "You are an expert coding programm and a highly skilled programming assistant.";
+        const systemPrompt = "You are an expert programming assistant and cloud engineer.";
 
         // --- API ROUTER ---
         switch (ai_provider) {
@@ -56,7 +60,7 @@ exports.handler = async (event) => {
                 break;
 
             case 'gemini':
-                const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+                const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
                 const geminiResult = await geminiModel.generateContent(fullPrompt);
                 const geminiResponse = await geminiResult.response;
                 resultText = geminiResponse.text();
@@ -75,7 +79,6 @@ exports.handler = async (event) => {
             
             case 'claude':
                 const claudeCompletion = await anthropic.messages.create({
-                    // UPDATED: Using the correct Sonnet 4 model name
                     model: "claude-sonnet-4-20250514",
                     max_tokens: 4096,
                     system: systemPrompt,
