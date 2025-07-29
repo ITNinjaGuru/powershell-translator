@@ -9,13 +9,18 @@ const livePreviewToggle = document.getElementById('live-preview');
 const actionSelect = document.getElementById('action-select');
 const inputLangSelect = document.getElementById('input-lang');
 const outputLangSelect = document.getElementById('output-lang');
-// NEW: Get reference to the AI provider dropdown
 const aiProviderSelect = document.getElementById('ai-provider-select');
 
 let uploadedFileName = null;
 const translationCache = new Map();
 const maxCacheSize = 50;
 
+/**
+ * Sends a payload to the backend API function.
+ * Checks cache first to avoid redundant calls.
+ * @param {object} payload The data to send to the API.
+ * @returns {Promise<string>} The text result from the API.
+ */
 async function callApi(payload) {
     const cacheKey = JSON.stringify(payload);
     if (translationCache.has(cacheKey)) {
@@ -28,10 +33,24 @@ async function callApi(payload) {
         body: JSON.stringify(payload)
     });
 
+    // --- UPDATED: Robust Error Handling ---
     if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `API Error: Server responded with status ${response.status}`);
+        let errorMessage = `API Error: Server responded with status ${response.status}`;
+        try {
+            // Try to get a specific error message from the API's JSON response
+            const errorData = await response.json();
+            errorMessage = errorData.error || JSON.stringify(errorData);
+        } catch (e) {
+            // If the error response wasn't JSON, try to read it as plain text
+            const textError = await response.text();
+            if (textError) {
+                errorMessage = textError;
+            }
+        }
+        // This throws a more informative error instead of crashing
+        throw new Error(errorMessage);
     }
+    // --- END OF UPDATE ---
 
     const data = await response.json();
     const result = data.pythonCode; 
@@ -88,9 +107,8 @@ async function handleApiCall() {
     translateButton.disabled = true;
     downloadButton.disabled = true;
 
-    // Construct the payload, now including the AI provider
     const payload = {
-        ai_provider: aiProviderSelect.value, // NEW: Add selected provider
+        ai_provider: aiProviderSelect.value,
         action: actionSelect.value,
         code: code,
         inputLang: inputLangSelect.value,
