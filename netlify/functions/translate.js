@@ -1,32 +1,63 @@
+// 1. Import the Google Generative AI client library
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-exports.handler = async function(event) {
+// 2. Initialize the client with your API key from environment variables
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+exports.handler = async (event) => {
+    // Make sure the request is a POST request
     if (event.httpMethod !== 'POST') {
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
 
     try {
-        const { code } = JSON.parse(event.body);
+        // 3. Get the data from the frontend
+        const { action, code, inputLang, outputLang } = JSON.parse(event.body);
+
+        let prompt;
+
+        // 4. Build the prompt dynamically based on the selected action from the frontend
+        switch (action) {
+            case 'translate':
+                prompt = `You are an expert coder and only provide true, accurate and results that work. Translate the following ${inputLang} code to ${outputLang}. Only provide the raw code in a single markdown code block, with no extra explanation or text nefore or after the translated code.`;
+                break;
+            case 'explain':
+                prompt = `You are an expert coder and teacher. Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does.`;
+                break;
+            case 'debug':
+                prompt = `You are an expert coder. Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single markdown code block, and then below it, very briefly explain what you changed and why.`;
+                break;
+            case 'add_comments':
+                prompt = `You are an expert coder. Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single markdown code block.`;
+                break;
+            default:
+                // Fallback just in case of an unknown action
+                return { statusCode: 400, body: JSON.stringify({ error: "Invalid action specified." }) };
+        }
         
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+        // Append the user's code to the instruction prompt
+        const fullPrompt = `${prompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
 
-        const prompt = `You are a coding and scripting expert.  You verify your code before releasing it to your customers.  Your job is to translate the PowerShell script into working Python code. Provide only the raw, tested and verified accurate working Python code as the output, with no explanations or markdown formatting.  Do not include Markdown fences like \`\`\`python or \`\`\`. Your output should be able to be saved directly to a .py file and run without modification.  PowerShell Script: \n\n${code}`;
-
-        const result = await model.generateContent(prompt);
+        // 5. Select the Gemini model and call the API
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(fullPrompt);
         const response = await result.response;
-        const pythonCode = response.text();
+        
+        // 6. Extract the text from the Gemini response
+        const text = response.text();
 
+        // 7. Return the result to the frontend
         return {
             statusCode: 200,
-            body: JSON.stringify({ pythonCode: pythonCode.trim() })
+            // The key here ('pythonCode') must match what the frontend script expects
+            body: JSON.stringify({ pythonCode: text }) 
         };
 
     } catch (error) {
-        console.error("Error during translation:", error);
+        console.error("API call failed:", error);
         return {
             statusCode: 500,
-            body: JSON.stringify({ error: 'Failed to translate script.' })
+            body: JSON.stringify({ error: "An error occurred while processing your request." })
         };
     }
 };
