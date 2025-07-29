@@ -26,7 +26,7 @@ exports.handler = async (event) => {
         // This prompt-building logic is the same for all models
         switch (action) {
             case 'translate':
-                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.`;
+                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text. If the code requires specific modules or nodejs modules, make sure to add that in the comments of the script file as commented out lines.`;
                 break;
             case 'explain':
                 userPrompt = `Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does.`;
@@ -43,20 +43,20 @@ exports.handler = async (event) => {
         
         const fullPrompt = `${userPrompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
         let resultText;
-        const systemPrompt = "You are an expert programming assistant.";
+        const systemPrompt = "You are an expert coding programm and a highly skilled programming assistant.";
 
         // --- API ROUTER ---
         switch (ai_provider) {
             case 'grok':
                 const grokCompletion = await xai.chat.completions.create({
                     messages: [{ role: "user", content: fullPrompt }],
-                    model: "grok-4-0709", 
+                    model: "grok-3", 
                 });
                 resultText = grokCompletion.choices[0].message.content;
                 break;
 
             case 'gemini':
-                const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+                const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
                 const geminiResult = await geminiModel.generateContent(fullPrompt);
                 const geminiResponse = await geminiResult.response;
                 resultText = geminiResponse.text();

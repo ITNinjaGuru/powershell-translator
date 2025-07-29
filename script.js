@@ -181,12 +181,12 @@ downloadButton.addEventListener('click', () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
 });
-
+/**
 const xIcon = document.querySelector('.x-icon');
 if (xIcon) { xIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on X coming soon!'); }); }
 const githubIcon = document.querySelector('.github-icon');
 if (githubIcon) { githubIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on GitHub coming soon!'); }); }
-
+*/
 if (document.getElementById('particles-js')) {
     particlesJS('particles-js', {
         particles: {
