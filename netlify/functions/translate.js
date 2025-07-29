@@ -58,7 +58,7 @@ exports.handler = async (event) => {
                         { role: "system", content: "You are an expert programming assistant." },
                         { role: "user", content: fullPrompt }
                     ],
-                    model: "grok", // Verify model name with xAI API docs
+                    model: "grok-4", // Verify model name with xAI API docs
                 });
             },
             {
