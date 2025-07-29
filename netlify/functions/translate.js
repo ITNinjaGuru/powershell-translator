@@ -1,9 +1,13 @@
-// 1. Import the Google Generative AI client library
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+// 1. Import the OpenAI client library (we use this to talk to Groq's API)
+const OpenAI = require("openai");
 
-// 2. Initialize the client with your API key from environment variables
-// Make sure you have GEMINI_API_KEY set in your Netlify environment
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// 2. Initialize the client to point to the Groq API
+const groq = new OpenAI({
+    // Point to the Groq API endpoint
+    baseURL: "https://api.groq.com/openai/v1",
+    // Use your GROK_API_KEY from Netlify environment variables
+    apiKey: process.env.GROK_API_KEY,
+});
 
 exports.handler = async (event) => {
     // Make sure the request is a POST request
@@ -38,19 +42,24 @@ exports.handler = async (event) => {
         // Append the user's code to the instruction prompt
         const fullPrompt = `${userPrompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
 
-        // 5. Select the Gemini model and call the API
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
-        const result = await model.generateContent(fullPrompt);
-        const response = await result.response;
+        // 5. Call the Groq Chat Completions API
+        const chatCompletion = await groq.chat.completions.create({
+            messages: [
+                { role: "system", content: "You are an expert programmer across all scripting languages.  You are also an expert assistant. You only supply code that has a high rate of success and does not include made up commands or modules that do not exist." },
+                { role: "user", content: fullPrompt }
+            ],
+            // Using a powerful Llama 3 model hosted by Groq
+            model: "llama3-70b-8192", 
+        });
         
-        // 6. Extract the text from the Gemini response
-        const text = response.text();
+        // 6. Extract the text from the Groq response
+        const result = chatCompletion.choices[0].message.content;
 
         // 7. Return the result to the frontend
         return {
             statusCode: 200,
             // The key here ('pythonCode') must match what the frontend script expects
-            body: JSON.stringify({ pythonCode: text }) 
+            body: JSON.stringify({ pythonCode: result }) 
         };
 
     } catch (error) {
