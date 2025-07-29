@@ -19,16 +19,16 @@ exports.handler = async (event) => {
         // 4. Build the prompt dynamically based on the selected action from the frontend
         switch (action) {
             case 'translate':
-                prompt = `You are an expert coder and only provide true, accurate and results that work. Translate the following ${inputLang} code to ${outputLang}. Only provide the raw code in a single markdown code block, with no extra explanation or text nefore or after the translated code.`;
+                prompt = `You are an expert coder and only provide true, accurate and code that is verified and extremely confident that will successfully work. You do not make up false or nonexistent commands for modules that do not exist. Translate the following ${inputLang} code to ${outputLang}. Only provide the raw code in a single code block, with no extra explanation. Never include markdown notation before or after the codeblock. Use text only.`;
                 break;
             case 'explain':
-                prompt = `You are an expert coder and teacher. Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does.`;
+                prompt = `You are an expert coder and teacher. Explain the following ${inputLang} code in simple, clear terms. Provide a step-by-step breakdown of what it does.`;
                 break;
             case 'debug':
-                prompt = `You are an expert coder. Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single markdown code block, and then below it, very briefly explain what you changed and why.`;
+                prompt = `You are an expert coder. Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single code block, and then below it, very briefly explain what you changed and why. Never include markdown notation before or after the codeblock. Use text only.`;
                 break;
             case 'add_comments':
-                prompt = `You are an expert coder. Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single markdown code block.`;
+                prompt = `You are an expert coder. Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single code block. Never include markdown notation before or after the codeblock. Use text only.`;
                 break;
             default:
                 // Fallback just in case of an unknown action

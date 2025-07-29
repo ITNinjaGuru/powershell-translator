@@ -3,21 +3,21 @@
 
 /* --- THEME: BLUE STEEL --- */
 :root {
-    --background-color: #020c1b; /* Near Black */
-    --sidebar-bg: #0a192f; /* Dark Navy */
-    --main-bg: #112240; /* Deeper Navy */
-    --primary-accent: #00bfff; /* DeepSkyBlue */
-    --primary-accent-hover: #68d8ff;
-    --glass-background: rgba(17, 34, 64, 0.25);
-    --glass-border: rgba(0, 191, 255, 0.4);
-    --text-primary: #ccd6f6; /* Light Slate */
-    --text-secondary: #e6f1ff; /* Lighter Slate */
+    --background-color: #050509;
+    --sidebar-bg: #0F0F19; /* Very Dark Indigo */
+    --main-bg: #050509; /* Almost Black */
+    --primary-accent: #7DF9FF; /* Electric Blue / Cyan */
+    --primary-accent-hover: #A6FAFF;
+    --glass-background: rgba(15, 15, 25, 0.25);
+    --glass-border: rgba(125, 249, 255, 0.4);
+    --text-primary: #A8B2D1; /* Light Slate Blue */
+    --text-secondary: #E6F1FF;
 }
 
 /* General Styling */
 body {
     font-family: 'Inter', sans-serif;
-    background-color: var(--main-bg); /* Simplified background */
+    background-color: var(--main-bg);
     color: var(--text-primary);
     margin: 0;
     display: flex;
