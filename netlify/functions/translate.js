@@ -49,7 +49,7 @@ exports.handler = async (event) => {
                 { role: "user", content: fullPrompt }
             ],
             // Using a powerful Llama 3 model hosted by Groq
-            model: "llama3-70b-8192", 
+            model: "grok-4-0709", 
         });
         
         // 6. Extract the text from the Groq response
