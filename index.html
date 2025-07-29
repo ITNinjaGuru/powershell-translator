@@ -26,14 +26,12 @@
                 <h1>PoSh to Py</h1>
             </div>
             <div class="controls-container">
-                <!-- AI Provider Dropdown -->
                 <div class="control-group">
                     <label for="ai-provider-select">AI Provider</label>
                     <select id="ai-provider-select">
                         <option value="grok">Grok (xAI)</option>
                         <option value="gemini">Gemini (Google)</option>
                         <option value="chatgpt">ChatGPT (OpenAI)</option>
-                        <!-- NEW: Added Claude -->
                         <option value="claude" selected>Claude (Anthropic)</option>
                     </select>
                 </div>
@@ -81,8 +79,9 @@
             <div class="container">
                 <div class="editor-group">
                     <textarea id="code-input" placeholder="Paste your code here..."></textarea>
+                    <!-- Button is now inside the editor group -->
                     <div class="upload-section">
-                        <label for="ps-upload" class="upload-label">Upload File</label>
+                        <label for="ps-upload" class="upload-label">Upload</label>
                         <input type="file" id="ps-upload" hidden>
                     </div>
                 </div>
@@ -91,8 +90,9 @@
 
                 <div class="editor-group">
                     <textarea id="py-output" placeholder="Result will appear here..." readonly></textarea>
+                    <!-- Button is now inside the editor group -->
                     <div class="download-section">
-                        <button id="download-btn" disabled>Download File</button>
+                        <button id="download-btn" disabled>Download</button>
                     </div>
                 </div>
             </div>
@@ -103,7 +103,12 @@
     <div class="loading-spinner" id="loading-spinner" style="display: none;">
         <div class="spinner"></div>
     </div>
-   
+    <div class="notification" id="notification"></div>
+    <aside class="social-bar">
+        <a href="#" class="social-icon x-icon" title="Share on X">X</a>
+        <a href="#" class="social-icon github-icon" title="Share on GitHub">GH</a>
+    </aside>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script src="script.js"></script>
