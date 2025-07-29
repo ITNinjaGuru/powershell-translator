@@ -1,10 +1,10 @@
-// 1. Import the OpenAI client library (we use this to talk to Groq's API)
+// 1. Import the OpenAI client library (we use this to talk to xAI's compatible API)
 const OpenAI = require("openai");
 
-// 2. Initialize the client to point to the Groq API
-const groq = new OpenAI({
-    // Point to the Groq API endpoint
-    baseURL: "https://api.groq.com/openai/v1",
+// 2. Initialize the client to point to the xAI API
+const xai = new OpenAI({
+    // Point to the xAI API endpoint
+    baseURL: "https://api.xai.com/v1",
     // Use your GROK_API_KEY from Netlify environment variables
     apiKey: process.env.GROK_API_KEY,
 });
@@ -42,17 +42,17 @@ exports.handler = async (event) => {
         // Append the user's code to the instruction prompt
         const fullPrompt = `${userPrompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
 
-        // 5. Call the Groq Chat Completions API
-        const chatCompletion = await groq.chat.completions.create({
+        // 5. Call the xAI Chat Completions API
+        const chatCompletion = await xai.chat.completions.create({
             messages: [
-                { role: "system", content: "You are an expert programmer across all scripting languages.  You are also an expert assistant. You only supply code that has a high rate of success and does not include made up commands or modules that do not exist." },
+                { role: "system", content: "You are an expert programming assistant." },
                 { role: "user", content: fullPrompt }
             ],
-            // Using a powerful Llama 3 model hosted by Groq
+            // Using the Grok model you specified
             model: "grok-4-0709", 
         });
         
-        // 6. Extract the text from the Groq response
+        // 6. Extract the text from the Grok response
         const result = chatCompletion.choices[0].message.content;
 
         // 7. Return the result to the frontend
