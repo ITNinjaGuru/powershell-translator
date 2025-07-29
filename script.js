@@ -1,4 +1,4 @@
-// Get references to all elements
+// Get references to all interactive DOM elements
 const translateButton = document.getElementById('translate-btn');
 const codeInput = document.getElementById('code-input');
 const pythonOutput = document.getElementById('py-output');
@@ -6,25 +6,30 @@ const uploadInput = document.getElementById('ps-upload');
 const downloadButton = document.getElementById('download-btn');
 const loadingSpinner = document.getElementById('loading-spinner');
 const livePreviewToggle = document.getElementById('live-preview');
-
 const actionSelect = document.getElementById('action-select');
 const inputLangSelect = document.getElementById('input-lang');
 const outputLangSelect = document.getElementById('output-lang');
 
-// --- NEW: Variable to store the original filename ---
+// Global variable to store the name of an uploaded file, without extension
 let uploadedFileName = null;
-// --- END NEW ---
 
-// Translation cache
+// Simple cache to store recent API results
 const translationCache = new Map();
 const maxCacheSize = 50;
 
+/**
+ * Sends a payload to the backend API function.
+ * Checks cache first to avoid redundant calls.
+ * @param {object} payload The data to send to the API.
+ * @returns {Promise<string>} The text result from the API.
+ */
 async function callApi(payload) {
     const cacheKey = JSON.stringify(payload);
     if (translationCache.has(cacheKey)) {
         return translationCache.get(cacheKey);
     }
 
+    // Replace '/.netlify/functions/translate' with your actual API endpoint
     const response = await fetch('/.netlify/functions/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,19 +37,26 @@ async function callApi(payload) {
     });
 
     if (!response.ok) {
-        throw new Error(`Something went wrong. Server status: ${response.status}`);
+        throw new Error(`API Error: Server responded with status ${response.status}`);
     }
 
     const data = await response.json();
-    const result = data.pythonCode;
+    // Assuming your backend returns the result in a key named 'pythonCode' or similar
+    const result = data.pythonCode; 
     
+    // Update cache
     translationCache.set(cacheKey, result);
     if (translationCache.size > maxCacheSize) {
-        translationCache.clear();
+        const firstKey = translationCache.keys().next().value;
+        translationCache.delete(firstKey); // Evict oldest entry
     }
     return result;
 }
 
+/**
+ * Displays a temporary notification message on the screen.
+ * @param {string} message The message to display.
+ */
 function showNotification(message) {
     const notification = document.getElementById('notification');
     notification.textContent = message;
@@ -54,21 +66,23 @@ function showNotification(message) {
     }, 3000);
 }
 
+// Hides the "To:" language dropdown if the action is not 'translate'
 actionSelect.addEventListener('change', () => {
     const isTranslate = actionSelect.value === 'translate';
     outputLangSelect.disabled = !isTranslate;
+    outputLangSelect.parentElement.style.display = isTranslate ? 'flex' : 'none';
 });
 
-// --- MODIFIED: File upload listener ---
+// Handles file uploads
 uploadInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) {
-        uploadedFileName = null; // Reset if no file is chosen
+        uploadedFileName = null;
         showNotification('No file selected.');
         return;
     }
     
-    // Store the filename without its original extension
+    // Store filename without extension for later use
     uploadedFileName = file.name.split('.').slice(0, -1).join('.');
 
     const reader = new FileReader();
@@ -80,24 +94,29 @@ uploadInput.addEventListener('change', (event) => {
     };
     reader.readAsText(file);
 });
-// --- END MODIFIED ---
 
+/**
+ * The main function to process the user's request.
+ * It gathers all inputs, calls the API, and updates the UI.
+ */
 async function handleApiCall() {
     const code = codeInput.value;
-    if (!code) {
-        if (event.type !== 'input') {
+    if (!code.trim()) {
+        if (event && event.type !== 'input') {
             showNotification('Please enter some code.');
         }
         pythonOutput.value = '';
         return;
     }
 
+    // Show loading state
     loadingSpinner.style.display = 'block';
     pythonOutput.style.opacity = '0';
     pythonOutput.value = '';
     translateButton.disabled = true;
     downloadButton.disabled = true;
 
+    // Construct the payload from all user selections
     const payload = {
         action: actionSelect.value,
         code: code,
@@ -114,48 +133,50 @@ async function handleApiCall() {
         pythonOutput.value = `Error: ${error.message}`;
         pythonOutput.style.opacity = '1';
     } finally {
+        // Hide loading state
         loadingSpinner.style.display = 'none';
         translateButton.disabled = false;
     }
 }
 
+// Debounce logic for live preview to avoid excessive API calls
 let debounceTimeout;
-// --- MODIFIED: Live preview listener ---
 codeInput.addEventListener('input', () => {
-    uploadedFileName = null; // Reset filename if user types manually
+    // If user types manually, forget the uploaded filename
+    uploadedFileName = null; 
     if (!livePreviewToggle.checked) return;
     clearTimeout(debounceTimeout);
     debounceTimeout = setTimeout(handleApiCall, 1000);
 });
-// --- END MODIFIED ---
 
+// Trigger the API call when the main button is clicked
 translateButton.addEventListener('click', handleApiCall);
 
-// --- MODIFIED: Download button logic ---
+// Handles downloading the output content with a smart filename
 downloadButton.addEventListener('click', () => {
-    const pythonCode = pythonOutput.value;
-    if (!pythonCode || pythonCode.startsWith('Error:')) {
+    const outputContent = pythonOutput.value;
+    if (!outputContent || outputContent.startsWith('Error:')) {
         showNotification('No valid code to download.');
         return;
     }
 
-    const blob = new Blob([pythonCode], { type: 'text/plain' });
+    const blob = new Blob([outputContent], { type: 'text/plain' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     
     const action = actionSelect.value;
     let filename;
 
-    // Determine the correct file extension based on the output language
+    // Map languages to their common file extensions
     const lang = outputLangSelect.options[outputLangSelect.selectedIndex].text.toLowerCase();
     const extensionMap = { 'python': 'py', 'javascript': 'js', 'powershell': 'ps1', 'c#': 'cs', 'go': 'go' };
     const extension = extensionMap[lang] || 'txt';
 
-    // Use the uploaded filename if it exists and the action is 'translate'
-    if (action === 'translate' && uploadedFileName) {
+    // Use the uploaded filename if it exists and the action produces code
+    if ((action === 'translate' || action === 'add_comments' || action === 'debug') && uploadedFileName) {
         filename = `${uploadedFileName}.${extension}`;
     } else {
-        // Otherwise, use the generic fallback names
+        // Otherwise, use generic fallback names based on the action
         switch(action) {
             case 'translate':
                 filename = `translated_script.${extension}`;
@@ -164,7 +185,7 @@ downloadButton.addEventListener('click', () => {
                 filename = 'explanation.txt';
                 break;
             case 'debug':
-                filename = 'debugged_code.txt';
+                filename = `debugged_script.${extension}`;
                 break;
             case 'add_comments':
                 filename = `commented_script.${extension}`;
@@ -180,30 +201,31 @@ downloadButton.addEventListener('click', () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
 });
-// --- END MODIFIED ---
 
-// Social sharing
+// Placeholder for social sharing logic
 const xIcon = document.querySelector('.x-icon');
 if (xIcon) {
-    xIcon.addEventListener('click', () => { /* Share logic here */ });
+    xIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on X coming soon!'); });
 }
 const githubIcon = document.querySelector('.github-icon');
 if (githubIcon) {
-    githubIcon.addEventListener('click', () => { /* Share logic here */ });
+    githubIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on GitHub coming soon!'); });
 }
 
-// Particle background
-particlesJS('particles-js', {
-    particles: {
-        number: { value: 80, density: { enable: true, value_area: 800 } },
-        color: { value: '#ff00ff' },
-        shape: { type: 'circle' },
-        opacity: { value: 0.5, random: true },
-        size: { value: 3, random: true },
-        line_linked: { enable: true, distance: 150, color: '#ff00ff', opacity: 0.4, width: 1 },
-        move: { enable: true, speed: 2 }
-    },
-    interactivity: {
-        events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } }
-    }
-});
+// Initialize the particle.js background
+if (document.getElementById('particles-js')) {
+    particlesJS('particles-js', {
+        particles: {
+            number: { value: 80, density: { enable: true, value_area: 800 } },
+            color: { value: '#ff00ff' }, // Glitch Punk Magenta
+            shape: { type: 'circle' },
+            opacity: { value: 0.5, random: true },
+            size: { value: 3, random: true },
+            line_linked: { enable: true, distance: 150, color: '#ff00ff', opacity: 0.4, width: 1 },
+            move: { enable: true, speed: 2 }
+        },
+        interactivity: {
+            events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } }
+        }
+    });
+}
