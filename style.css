@@ -1,7 +1,7 @@
 /* Import Fonts & Define Variables */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Orbitron:wght@400;700&display=swap');
 
-/* --- THEME: BLUE STEEL --- */
+/* --- THEME: GHOST IN THE CODE --- */
 :root {
     --background-color: #050509;
     --sidebar-bg: #0F0F19; /* Very Dark Indigo */
@@ -35,7 +35,7 @@ body {
     z-index: -1;
 }
 
-/* --- NEW LAYOUT: App Wrapper & Sidebar --- */
+/* --- App Wrapper & Sidebar Layout --- */
 .app-wrapper {
     display: flex;
     width: 100%;
@@ -50,7 +50,7 @@ body {
     flex-direction: column;
     gap: 30px;
     border-right: 1px solid var(--glass-border);
-    flex-shrink: 0; /* Prevents sidebar from shrinking */
+    flex-shrink: 0;
 }
 
 .sidebar-header h1 {
@@ -67,19 +67,18 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    overflow-y: auto; /* Allows content to scroll if it overflows */
+    overflow-y: auto;
 }
-/* --- END OF NEW LAYOUT --- */
 
 .tagline {
     color: var(--text-secondary);
     font-size: 1.2rem;
     text-align: center;
     margin-bottom: 1.5rem;
-    text-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+    text-shadow: 0 0 10px rgba(125, 249, 255, 0.5);
 }
 
-/* --- UPDATED CONTROLS FOR SIDEBAR --- */
+/* --- Controls for Sidebar --- */
 .controls-container {
     display: flex;
     flex-direction: column;
@@ -106,7 +105,7 @@ body {
     appearance: none;
     
     font-family: 'Inter', sans-serif;
-    background-color: var(--main-bg); /* Darker background for contrast */
+    background-color: var(--main-bg);
     color: var(--text-primary);
     border: 1px solid var(--glass-border);
     border-radius: 6px;
@@ -115,7 +114,7 @@ body {
     transition: border-color 0.3s, box-shadow 0.3s;
     width: 100%;
 
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23ccd6f6' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23A8B2D1' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 10px center;
     background-size: 16px;
@@ -124,24 +123,22 @@ body {
 .control-group select:hover, .control-group select:focus {
     outline: none;
     border-color: var(--primary-accent);
-    box-shadow: 0 0 10px rgba(0, 191, 255, 0.5);
+    box-shadow: 0 0 10px rgba(125, 249, 255, 0.5);
 }
 
 .control-group select:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    box-shadow: none;
-    border-color: var(--glass-border);
 }
 
-/* --- UPDATED TEXTAREAS --- */
+/* --- Main Content Area & Textareas --- */
 .container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 25px;
+    gap: 15px; /* Adjusted gap */
     width: 100%;
-    max-width: 1400px; /* Wider by default */
+    max-width: 1400px;
 }
 
 .editor-group {
@@ -154,20 +151,19 @@ body {
 textarea {
     width: 100%;
     height: 40vh;
-    min-height: 200px; /* Set a minimum height */
+    min-height: 200px;
     padding: 20px;
     font-size: 14px;
     font-family: 'Courier New', Courier, monospace;
     color: var(--text-primary);
-    resize: both; /* Allow horizontal and vertical resizing */
+    resize: both; /* Allow full resizing */
     border-radius: 12px;
     border: 2px solid var(--glass-border);
-    background: rgba(2, 12, 27, 0.8);
+    background: rgba(5, 5, 9, 0.8);
     transition: opacity 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     box-sizing: border-box;
 }
 
-/* Other styles remain largely the same... */
 @supports (backdrop-filter: blur(10px)) {
     textarea {
         background: var(--glass-background);
@@ -179,93 +175,72 @@ textarea {
 textarea:focus, textarea:hover {
     outline: none;
     border-color: var(--primary-accent);
-    box-shadow: 0 0 20px rgba(0, 191, 255, 0.6), 0 0 30px rgba(0, 191, 255, 0.3);
+    box-shadow: 0 0 20px rgba(125, 249, 255, 0.6), 0 0 30px rgba(125, 249, 255, 0.3);
 }
 
+/* --- UPDATED BUTTONS --- */
 button, .upload-label {
     padding: 12px 24px;
     font-size: 16px;
     font-weight: 500;
-    color: #020c1b;
-    background-color: var(--primary-accent);
-    border: none;
+    color: var(--text-secondary);
+    background-color: rgba(125, 249, 255, 0.1); /* Low opacity background */
+    border: 1px solid var(--primary-accent);
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 button:hover, .upload-label:hover {
-    background-color: var(--primary-accent-hover);
+    background-color: rgba(125, 249, 255, 0.3); /* Higher opacity on hover */
+    color: #fff;
     transform: translateY(-3px);
-    box-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
+    box-shadow: 0 0 15px rgba(125, 249, 255, 0.5);
+}
+
+#translate-btn {
+    margin: 10px 0; /* Vertical spacing for the process button */
 }
 
 button:disabled {
     background-color: #3a4a6b;
     color: #8c8c8c;
+    border-color: #3a4a6b;
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
 }
 
 .upload-section, .download-section {
-    margin: 0;
     padding-top: 15px;
-    width: auto;
-    text-align: center;
 }
 
 .toggle-section {
-    margin-top: auto; /* Pushes toggle to the bottom of the sidebar */
+    margin-top: auto;
     padding-top: 20px;
     border-top: 1px solid var(--glass-border);
     text-align: center;
     color: var(--text-secondary);
 }
 
-/* Standalone elements styling */
-.loading-spinner, .notification, .social-bar {
-    z-index: 1000;
-}
-.loading-spinner { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+/* Other styles... */
+.loading-spinner { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; }
 .spinner { width: 40px; height: 40px; border: 4px solid var(--primary-accent); border-top: 4px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
-
-.notification { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: var(--glass-background); backdrop-filter: blur(10px); border-radius: 8px; color: var(--text-primary); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); opacity: 0; transition: opacity 0.3s ease; }
+.notification { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: var(--glass-background); backdrop-filter: blur(10px); border-radius: 8px; color: var(--text-primary); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
 .notification.show { opacity: 1; }
-
-.social-bar { position: fixed; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; }
-.social-icon { width: 40px; height: 40px; background: var(--primary-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #020c1b; text-decoration: none; font-size: 1.2rem; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.social-icon:hover { transform: scale(1.2); box-shadow: 0 0 15px rgba(0, 191, 255, 0.5); }
+.social-bar { position: fixed; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
+.social-icon { width: 40px; height: 40px; background: var(--primary-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #050509; text-decoration: none; font-size: 1.2rem; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.social-icon:hover { transform: scale(1.2); box-shadow: 0 0 15px rgba(125, 249, 255, 0.5); }
 .github-icon { background: #333; color: #fff; }
 .github-icon:hover { background: #444; }
 
-/* Responsive Design for smaller screens */
+/* Responsive Design */
 @media (max-width: 1024px) {
-    .app-wrapper {
-        flex-direction: column;
-        height: auto;
-    }
-    .sidebar {
-        width: 100%;
-        border-right: none;
-        border-bottom: 1px solid var(--glass-border);
-        box-sizing: border-box;
-        height: auto;
-    }
-    .controls-container {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    .control-group {
-        width: 200px;
-    }
-    .main-content {
-        padding: 20px;
-    }
-    .toggle-section {
-        margin-top: 20px;
-        border-top: none;
-    }
+    .app-wrapper { flex-direction: column; height: auto; }
+    .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--glass-border); box-sizing: border-box; height: auto; }
+    .controls-container { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .control-group { width: 200px; }
+    .main-content { padding: 20px; }
+    .toggle-section { margin-top: 20px; border-top: none; }
 }

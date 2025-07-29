@@ -41,14 +41,12 @@ async function callApi(payload) {
     }
 
     const data = await response.json();
-    // Assuming your backend returns the result in a key named 'pythonCode' or similar
     const result = data.pythonCode; 
     
-    // Update cache
     translationCache.set(cacheKey, result);
     if (translationCache.size > maxCacheSize) {
         const firstKey = translationCache.keys().next().value;
-        translationCache.delete(firstKey); // Evict oldest entry
+        translationCache.delete(firstKey);
     }
     return result;
 }
@@ -73,50 +71,40 @@ actionSelect.addEventListener('change', () => {
     outputLangSelect.parentElement.style.display = isTranslate ? 'flex' : 'none';
 });
 
-// Handles file uploads
+// --- UPDATED: File upload listener ---
+// This now ONLY loads the file content and does NOT trigger an API call.
 uploadInput.addEventListener('change', (event) => {
     const file = event.target.files[0];
     if (!file) {
         uploadedFileName = null;
-        showNotification('No file selected.');
         return;
     }
     
-    // Store filename without extension for later use
     uploadedFileName = file.name.split('.').slice(0, -1).join('.');
 
     const reader = new FileReader();
     reader.onload = (e) => {
         codeInput.value = e.target.result;
-        if (livePreviewToggle.checked) {
-            handleApiCall();
-        }
     };
     reader.readAsText(file);
 });
 
 /**
  * The main function to process the user's request.
- * It gathers all inputs, calls the API, and updates the UI.
  */
 async function handleApiCall() {
     const code = codeInput.value;
     if (!code.trim()) {
-        if (event && event.type !== 'input') {
-            showNotification('Please enter some code.');
-        }
-        pythonOutput.value = '';
+        showNotification('Please enter some code.');
         return;
     }
 
-    // Show loading state
     loadingSpinner.style.display = 'block';
     pythonOutput.style.opacity = '0';
     pythonOutput.value = '';
     translateButton.disabled = true;
     downloadButton.disabled = true;
 
-    // Construct the payload from all user selections
     const payload = {
         action: actionSelect.value,
         code: code,
@@ -133,85 +121,62 @@ async function handleApiCall() {
         pythonOutput.value = `Error: ${error.message}`;
         pythonOutput.style.opacity = '1';
     } finally {
-        // Hide loading state
         loadingSpinner.style.display = 'none';
         translateButton.disabled = false;
     }
 }
 
-// --- UPDATED Live Preview & Paste Logic ---
+// Live Preview & Paste Logic
 let debounceTimeout;
 let isPasting = false;
 
-// When the user pastes, set a flag but don't do anything else.
 codeInput.addEventListener('paste', () => {
     isPasting = true;
     uploadedFileName = null;
 });
 
-// The 'input' event fires for both typing and pasting.
 codeInput.addEventListener('input', () => {
-    // If the event was triggered by a paste, reset the flag and do nothing.
-    // This stops the API call from running automatically on paste.
     if (isPasting) {
         isPasting = false;
         return;
     }
 
-    // This code now only runs for manual typing.
     uploadedFileName = null; 
-    if (!livePreviewToggle.checked) return; // Still respect the toggle for typing
+    if (!livePreviewToggle.checked) return;
     clearTimeout(debounceTimeout);
     debounceTimeout = setTimeout(handleApiCall, 1000);
 });
-// --- END OF UPDATED LOGIC ---
 
 // Trigger the API call when the main button is clicked
 translateButton.addEventListener('click', handleApiCall);
 
-// Handles downloading the output content with a smart filename
+// Handles downloading the output content
 downloadButton.addEventListener('click', () => {
+    // ... download logic remains the same ...
     const outputContent = pythonOutput.value;
     if (!outputContent || outputContent.startsWith('Error:')) {
         showNotification('No valid code to download.');
         return;
     }
-
     const blob = new Blob([outputContent], { type: 'text/plain' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    
     const action = actionSelect.value;
     let filename;
-
-    // Map languages to their common file extensions
     const lang = outputLangSelect.options[outputLangSelect.selectedIndex].text.toLowerCase();
     const extensionMap = { 'python': 'py', 'javascript': 'js', 'powershell': 'ps1', 'c#': 'cs', 'go': 'go' };
     const extension = extensionMap[lang] || 'txt';
-
-    // Use the uploaded filename if it exists and the action produces code
     if ((action === 'translate' || action === 'add_comments' || action === 'debug') && uploadedFileName) {
         filename = `${uploadedFileName}.${extension}`;
     } else {
-        // Otherwise, use generic fallback names based on the action
         switch(action) {
-            case 'translate':
-                filename = `translated_script.${extension}`;
-                break;
-            case 'explain':
-                filename = 'explanation.txt';
-                break;
-            case 'debug':
-                filename = `debugged_script.${extension}`;
-                break;
-            case 'add_comments':
-                filename = `commented_script.${extension}`;
-                break;
-            default:
-                filename = 'result.txt';
+            case 'translate': filename = `translated_script.${extension}`; break;
+            case 'explain': filename = 'explanation.txt'; break;
+            case 'debug': filename = `debugged_script.${extension}`; break;
+            case 'add_comments': filename = `commented_script.${extension}`; break;
+            default: filename = 'result.txt';
         }
     }
-
     link.download = filename;
     document.body.appendChild(link);
     link.click();
@@ -219,26 +184,22 @@ downloadButton.addEventListener('click', () => {
     URL.revokeObjectURL(link.href);
 });
 
-// Placeholder for social sharing logic
+// Social sharing placeholders
 const xIcon = document.querySelector('.x-icon');
-if (xIcon) {
-    xIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on X coming soon!'); });
-}
+if (xIcon) { xIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on X coming soon!'); }); }
 const githubIcon = document.querySelector('.github-icon');
-if (githubIcon) {
-    githubIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on GitHub coming soon!'); });
-}
+if (githubIcon) { githubIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on GitHub coming soon!'); }); }
 
-// Initialize the particle.js background
+// Initialize particle.js background
 if (document.getElementById('particles-js')) {
     particlesJS('particles-js', {
         particles: {
             number: { value: 80, density: { enable: true, value_area: 800 } },
-            color: { value: '#ffffff' }, 
+            color: { value: '#7DF9FF' }, // Ghost in the Code accent
             shape: { type: 'circle' },
             opacity: { value: 0.5, random: true },
             size: { value: 3, random: true },
-            line_linked: { enable: true, distance: 150, color: '#00bfff', opacity: 0.4, width: 1 }, // UPDATED: Blue Steel color
+            line_linked: { enable: true, distance: 150, color: '#7DF9FF', opacity: 0.4, width: 1 },
             move: { enable: true, speed: 2 }
         },
         interactivity: {

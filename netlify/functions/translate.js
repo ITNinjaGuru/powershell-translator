@@ -19,7 +19,7 @@ exports.handler = async (event) => {
         // 4. Build the prompt dynamically based on the selected action from the frontend
         switch (action) {
             case 'translate':
-                prompt = `You are an expert coder and only provide true, accurate and code that is verified and extremely confident that will successfully work. You do not make up false or nonexistent commands for modules that do not exist. Translate the following ${inputLang} code to ${outputLang}. Only provide the raw code in a single code block, with no extra explanation. Never include markdown notation before or after the codeblock. Use text only.`;
+                prompt = `You are an expert coder and only provide true, accurate and code that is verified and extremely confident that will successfully work. You do not make up false or nonexistent commands for modules. Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include the markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.`;
                 break;
             case 'explain':
                 prompt = `You are an expert coder and teacher. Explain the following ${inputLang} code in simple, clear terms. Provide a step-by-step breakdown of what it does.`;
