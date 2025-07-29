@@ -139,15 +139,32 @@ async function handleApiCall() {
     }
 }
 
-// Debounce logic for live preview to avoid excessive API calls
+// --- UPDATED Live Preview & Paste Logic ---
 let debounceTimeout;
+let isPasting = false;
+
+// When the user pastes, set a flag but don't do anything else.
+codeInput.addEventListener('paste', () => {
+    isPasting = true;
+    uploadedFileName = null;
+});
+
+// The 'input' event fires for both typing and pasting.
 codeInput.addEventListener('input', () => {
-    // If user types manually, forget the uploaded filename
+    // If the event was triggered by a paste, reset the flag and do nothing.
+    // This stops the API call from running automatically on paste.
+    if (isPasting) {
+        isPasting = false;
+        return;
+    }
+
+    // This code now only runs for manual typing.
     uploadedFileName = null; 
-    if (!livePreviewToggle.checked) return;
+    if (!livePreviewToggle.checked) return; // Still respect the toggle for typing
     clearTimeout(debounceTimeout);
     debounceTimeout = setTimeout(handleApiCall, 1000);
 });
+// --- END OF UPDATED LOGIC ---
 
 // Trigger the API call when the main button is clicked
 translateButton.addEventListener('click', handleApiCall);
@@ -217,11 +234,11 @@ if (document.getElementById('particles-js')) {
     particlesJS('particles-js', {
         particles: {
             number: { value: 80, density: { enable: true, value_area: 800 } },
-            color: { value: '#00bfff' }, // DeepSkyBlue
+            color: { value: '#00bfff' }, // UPDATED: Blue Steel color
             shape: { type: 'circle' },
             opacity: { value: 0.5, random: true },
             size: { value: 3, random: true },
-            line_linked: { enable: true, distance: 150, color: '#00bfff', opacity: 0.4, width: 1 },
+            line_linked: { enable: true, distance: 150, color: '#00bfff', opacity: 0.4, width: 1 }, // UPDATED: Blue Steel color
             move: { enable: true, speed: 2 }
         },
         interactivity: {
