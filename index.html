@@ -17,89 +17,88 @@
     <!-- Background particles will be rendered here -->
     <div id="particles-js"></div>
 
-    <header>
-        <h1>PoSh to Py</h1>
-        <p class="tagline">Translate, Explain, and Debug Code in Seconds!</p>
-    </header>
+    <!-- Main wrapper for the flexbox layout -->
+    <div class="app-wrapper">
+        
+        <!-- NEW: Sidebar for all controls -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>PoSh to Py</h1>
+            </div>
+            <div class="controls-container">
+                <div class="control-group">
+                    <label for="action-select">Action</label>
+                    <select id="action-select">
+                        <option value="translate" selected>Translate</option>
+                        <option value="explain">Explain Code</option>
+                        <option value="debug">Find & Fix Bugs</option>
+                        <option value="add_comments">Add Comments</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="input-lang">From</label>
+                    <select id="input-lang">
+                        <option value="PowerShell" selected>PowerShell</option>
+                        <option value="Python">Python</option>
+                        <option value="JavaScript">JavaScript</option>
+                        <option value="C#">C#</option>
+                        <option value="Go">Go</option>
+                        <option value="Auto-Detect">Auto-Detect</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="output-lang">To</label>
+                    <select id="output-lang">
+                        <option value="Python" selected>Python</option>
+                        <option value="PowerShell">PowerShell</option>
+                        <option value="JavaScript">JavaScript</option>
+                        <option value="C#">C#</option>
+                        <option value="Go">Go</option>
+                    </select>
+                </div>
+            </div>
+            <div class="toggle-section">
+                <label for="live-preview">Live Preview</label>
+                <input type="checkbox" id="live-preview" checked>
+            </div>
+        </aside>
 
-    <!-- All the user controls for actions and languages -->
-    <div class="controls-container">
-        <div class="control-group">
-            <label for="action-select">Action:</label>
-            <select id="action-select">
-                <option value="translate" selected>Translate</option>
-                <option value="explain">Explain Code</option>
-                <option value="debug">Find & Fix Bugs</option>
-                <option value="add_comments">Add Comments</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label for="input-lang">From:</label>
-            <select id="input-lang">
-                <option value="PowerShell" selected>PowerShell</option>
-                <option value="Python">Python</option>
-                <option value="JavaScript">JavaScript</option>
-                <option value="C#">C#</option>
-                <option value="Go">Go</option>
-                <option value="Auto-Detect">Auto-Detect</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label for="output-lang">To:</label>
-            <select id="output-lang">
-                <option value="Python" selected>Python</option>
-                <option value="PowerShell">PowerShell</option>
-                <option value="JavaScript">JavaScript</option>
-                <option value="C#">C#</option>
-                <option value="Go">Go</option>
-            </select>
-        </div>
+        <!-- Main content area for editors and buttons -->
+        <main class="main-content">
+            <p class="tagline">Translate, Explain, and Debug Code in Seconds!</p>
+            
+            <div class="container">
+                <div class="editor-group">
+                    <textarea id="code-input" placeholder="Paste your code here..."></textarea>
+                    <div class="upload-section">
+                        <label for="ps-upload" class="upload-label">Upload File</label>
+                        <input type="file" id="ps-upload" hidden>
+                    </div>
+                </div>
+
+                <button id="translate-btn">Process →</button>
+
+                <div class="editor-group">
+                    <textarea id="py-output" placeholder="Result will appear here..." readonly></textarea>
+                    <div class="download-section">
+                        <button id="download-btn" disabled>Download File</button>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
-    <main>
-        <!-- Toggle for enabling/disabling live updates -->
-        <div class="toggle-section">
-            <label for="live-preview">Enable Live Preview</label>
-            <input type="checkbox" id="live-preview" checked>
-        </div>
-        
-        <!-- Main container for the text editors -->
-        <div class="container">
-            <!-- Input section -->
-            <div class="editor-group">
-                <textarea id="code-input" placeholder="Paste your code here..."></textarea>
-                <div class="upload-section">
-                    <label for="ps-upload" class="upload-label">Upload File</label>
-                    <input type="file" id="ps-upload" hidden>
-                </div>
-            </div>
-
-            <!-- The main button to trigger the action -->
-            <button id="translate-btn">Process →</button>
-
-            <!-- Output section -->
-            <div class="editor-group">
-                <textarea id="py-output" placeholder="Result will appear here..." readonly></textarea>
-                <div class="download-section">
-                    <button id="download-btn" disabled>Download File</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Loading spinner and notification elements -->
-        <div class="loading-spinner" id="loading-spinner" style="display: none;">
-            <div class="spinner"></div>
-        </div>
-        <div class="notification" id="notification"></div>
-    </main>
-
-    <!-- Social media sharing bar -->
+    <!-- Standalone elements -->
+    <div class="loading-spinner" id="loading-spinner" style="display: none;">
+        <div class="spinner"></div>
+    </div>
+    <div class="notification" id="notification"></div>
     <aside class="social-bar">
         <a href="#" class="social-icon x-icon" title="Share on X">X</a>
         <a href="#" class="social-icon github-icon" title="Share on GitHub">GH</a>
     </aside>
 
-    <!-- Scripts for functionality -->
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script src="script.js"></script>
 </body>
