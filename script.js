@@ -43,12 +43,7 @@ const modelsByProvider = {
         { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
         { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite' },
         
-    ],
-    grok: [
-        { id: 'grok-4-latest', name: 'Grok 4' },
-        { id: 'grok-3-latest', name: 'Grok 3 Latest' },
-        { id: 'grok-3-mini-latest', name: 'Grok 3 Mini Latest' },
-    ] 
+    ]
 };
 
 function populateModels() {
@@ -65,7 +60,7 @@ function populateModels() {
 
 // --- 2. AUTHENTICATION LOGIC ---
 let currentUser = null;
-let userApiKeys = {}; // Local cache for user's keys
+let userApiKeys = {};
 
 async function signInWithGithub() { const { error } = await _supabase.auth.signInWithOAuth({ provider: 'github' }); if (error) showNotification(`Error: ${error.message}`); }
 async function signOut() { const { error } = await _supabase.auth.signOut(); if (error) showNotification(`Error: ${error.message}`); }
@@ -76,14 +71,14 @@ async function updateAuthUI(user) {
         authButton.textContent = 'Logout';
         authButton.onclick = signOut;
         settingsBtn.style.display = 'block';
-        await loadUserApiKeys(); // Load keys on login
+        await loadUserApiKeys();
         loadHistory();
     } else {
         authButton.textContent = 'Login with GitHub';
         authButton.onclick = signInWithGithub;
         settingsBtn.style.display = 'none';
         historyList.innerHTML = '<li>Login to see your history.</li>';
-        userApiKeys = {}; // Clear keys on logout
+        userApiKeys = {};
     }
 }
 
@@ -97,54 +92,42 @@ async function loadUserApiKeys() {
     if (data) {
         userApiKeys = data;
     } else {
-        userApiKeys = {}; // Reset if no keys found
+        userApiKeys = {};
     }
 }
 
 settingsBtn.addEventListener('click', async () => {
-    await loadUserApiKeys(); // Ensure we have the latest keys
+    await loadUserApiKeys();
     document.getElementById('openai-key').value = userApiKeys.openai_key || '';
     document.getElementById('gemini-key').value = userApiKeys.gemini_key || '';
     document.getElementById('claude-key').value = userApiKeys.claude_key || '';
-    document.getElementById('grok-key').value = userApiKeys.grok_key || '';
     settingsModal.style.display = 'flex';
 });
 
 closeModalBtn.addEventListener('click', () => { settingsModal.style.display = 'none'; });
 
-// --- UPDATED: Robust "Save Keys" button logic ---
 saveKeysBtn.addEventListener('click', async () => {
     if (!currentUser) return showNotification('You must be logged in to save keys.');
     
     const keysToSave = {
-        id: currentUser.id, // This is the user's UUID
+        id: currentUser.id,
         openai_key: document.getElementById('openai-key').value.trim(),
         gemini_key: document.getElementById('gemini-key').value.trim(),
         claude_key: document.getElementById('claude-key').value.trim(),
-        grok_key: document.getElementById('grok-key').value.trim(),
     };
 
     try {
-        // Provide user feedback that something is happening
         saveKeysBtn.disabled = true;
         saveKeysBtn.textContent = 'Saving...';
-
         const { error } = await _supabase.from('user_api_keys').upsert(keysToSave);
-
-        if (error) {
-            // If there's an error, throw it to be caught by the catch block
-            throw error;
-        }
-
+        if (error) throw error;
         showNotification('API Keys saved successfully!');
-        userApiKeys = keysToSave; // Update local cache
-        settingsModal.style.display = 'none'; // Close modal on success
-
+        userApiKeys = keysToSave;
+        settingsModal.style.display = 'none';
     } catch (error) {
         showNotification(`Error saving keys: ${error.message}`);
         console.error("Error saving keys:", error);
     } finally {
-        // This always runs, ensuring the button is usable again
         saveKeysBtn.disabled = false;
         saveKeysBtn.textContent = 'Save Keys';
     }
@@ -153,23 +136,14 @@ saveKeysBtn.addEventListener('click', async () => {
 // --- 4. CONVERSATION HISTORY ---
 async function saveConversation(payload, result) {
     if (!currentUser) return;
-    const { error } = await _supabase.from('conversations').insert({
-        user_id: currentUser.id,
-        payload: payload,
-        result: result
-    });
+    const { error } = await _supabase.from('conversations').insert({ user_id: currentUser.id, payload: payload, result: result });
     if (error) console.error("Error saving history:", error);
 }
 
 async function loadHistory() {
     if (!currentUser) return;
     historyList.innerHTML = '<li>Loading...</li>';
-    const { data, error } = await _supabase
-        .from('conversations')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-    
+    const { data, error } = await _supabase.from('conversations').select('*').order('created_at', { ascending: false }).limit(20);
     if (error) {
         historyList.innerHTML = '<li>Error loading history.</li>';
     } else {
@@ -202,7 +176,6 @@ function renderHistory(items) {
     });
 }
 
-
 // --- 5. CORE APP LOGIC ---
 async function callApi(payload) {
     const response = await fetch('/.netlify/functions/translate', {
@@ -228,7 +201,6 @@ async function handleApiCall() {
         chatgpt: 'openai_key',
         gemini: 'gemini_key',
         claude: 'claude_key',
-        grok: 'grok_key'
     };
     const provider = aiProviderSelect.value;
     const requiredKey = providerKeyMap[provider];
@@ -289,60 +261,11 @@ downloadButton.addEventListener('click', () => { const outputContent = pythonOut
 checkInitialSession();
 populateModels();
 
-// --- UPDATED: Particles.js ---
-// Restored the full configuration object
+// Particles.js
 if (document.getElementById('particles-js')) {
     particlesJS('particles-js', {
-        "particles": {
-            "number": {
-                "value": 80,
-                "density": {
-                    "enable": true,
-                    "value_area": 800
-                }
-            },
-            "color": {
-                "value": "#7DF9FF"
-            },
-            "shape": {
-                "type": "circle"
-            },
-            "opacity": {
-                "value": 0.5,
-                "random": true
-            },
-            "size": {
-                "value": 3,
-                "random": true
-            },
-            "line_linked": {
-                "enable": true,
-                "distance": 150,
-                "color": "#7DF9FF",
-                "opacity": 0.4,
-                "width": 1
-            },
-            "move": {
-                "enable": true,
-                "speed": 2,
-                "direction": "none",
-                "out_mode": "out"
-            }
-        },
-        "interactivity": {
-            "detect_on": "canvas",
-            "events": {
-                "onhover": {
-                    "enable": true,
-                    "mode": "repulse"
-                },
-                "onclick": {
-                    "enable": true,
-                    "mode": "push"
-                },
-                "resize": true
-            }
-        },
+        "particles": { "number": { "value": 80, "density": { "enable": true, "value_area": 800 } }, "color": { "value": "#7DF9FF" }, "shape": { "type": "circle" }, "opacity": { "value": 0.5, "random": true }, "size": { "value": 3, "random": true }, "line_linked": { "enable": true, "distance": 150, "color": "#7DF9FF", "opacity": 0.4, "width": 1 }, "move": { "enable": true, "speed": 2, "direction": "none", "out_mode": "out" } },
+        "interactivity": { "detect_on": "canvas", "events": { "onhover": { "enable": true, "mode": "repulse" }, "onclick": { "enable": true, "mode": "push" }, "resize": true } },
         "retina_detect": true
     });
 }

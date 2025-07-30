@@ -9,41 +9,41 @@ exports.handler = async (event) => {
     }
 
     try {
-        // Now receiving user_api_key from the frontend
         const { user_api_key, ai_provider, model_version, action, code, inputLang, outputLang } = JSON.parse(event.body);
 
-        // Crucial: Check if an API key was provided
         if (!user_api_key) {
             return { statusCode: 400, body: JSON.stringify({ error: "API key is missing." }) };
         }
 
+
         let userPrompt;
+        // This prompt-building logic is the same for all models
         switch (action) {
-            case 'translate': userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.`; break;
-            case 'optimize': userPrompt = `Analyze the following ${inputLang} code and suggest optimizations for performance, readability, and best practices. Provide the optimized code in a single code block, and then below it, explain the changes you made.`; break;
-            case 'explain': userPrompt = `Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does.`; break;
-            case 'debug': userPrompt = `Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single code block, and then below it, explain what you changed and why.`; break;
-            case 'add_comments': userPrompt = `Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single code block.`; break;
-            default: return { statusCode: 400, body: JSON.stringify({ error: "Invalid action specified." }) };
+            case 'translate':
+                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text. If comment or remark is added, it must be commented out so it does not affect the code.`;
+                break;
+            // NEW: Case for the optimize action
+            case 'optimize':
+                userPrompt = `Analyze the following ${inputLang} code and suggest optimizations for performance, efficiency, security and best practices. Do not include markdown delimiters like \`\`\`python or \`\`\`. Provide the optimized code in a single code block, and then below it, a commented out explain the changes you made. I emphasize the commenting out of these notes.`;
+                break;
+            case 'explain':
+                userPrompt = `Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does. Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments should be commented out so they do not affect the code.`;
+                break;
+            case 'debug':
+                userPrompt = `Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single code block, and then below it, explain what you changed and why in a commented out section.  Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments should be commented out so they do not affect the code.`;
+                break;
+            case 'add_comments':
+                userPrompt = `Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single code block. Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments should be commented out so they do not affect the code.`;
+                break;
+            default:
+                return { statusCode: 400, body: JSON.stringify({ error: "Invalid action specified." }) };
         }
         
         const fullPrompt = `${userPrompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
         let resultText;
         const systemPrompt = "You are an expert programming assistant and cloud engineer.";
 
-        // --- API ROUTER ---
-        // The API client is now initialized dynamically inside the switch statement
-        // using the key provided by the user.
         switch (ai_provider) {
-            case 'grok':
-                const xai = new OpenAI({ baseURL: "https://api.xai.com/v1", apiKey: user_api_key });
-                const grokCompletion = await xai.chat.completions.create({
-                    messages: [{ role: "user", content: fullPrompt }],
-                    model: model_version, 
-                });
-                resultText = grokCompletion.choices[0].message.content;
-                break;
-
             case 'gemini':
                 const genAI = new GoogleGenerativeAI(user_api_key);
                 const geminiModel = genAI.getGenerativeModel({ model: model_version });
@@ -83,7 +83,6 @@ exports.handler = async (event) => {
 
     } catch (error) {
         console.error("API call failed:", error);
-        // Provide a more specific error message to the user
         const errorMessage = error.response ? JSON.stringify(error.response.data) : error.message;
         return {
             statusCode: 500,
