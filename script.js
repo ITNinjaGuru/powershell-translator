@@ -89,11 +89,8 @@ async function checkInitialSession() { const { data: { session } } = await _supa
 async function loadUserApiKeys() {
     if (!currentUser) return;
     const { data, error } = await _supabase.from('user_api_keys').select('*').single();
-    if (data) {
-        userApiKeys = data;
-    } else {
-        userApiKeys = {};
-    }
+    if (data) userApiKeys = data;
+    else userApiKeys = {};
 }
 
 settingsBtn.addEventListener('click', async () => {
@@ -134,23 +131,8 @@ saveKeysBtn.addEventListener('click', async () => {
 });
 
 // --- 4. CONVERSATION HISTORY ---
-async function saveConversation(payload, result) {
-    if (!currentUser) return;
-    const { error } = await _supabase.from('conversations').insert({ user_id: currentUser.id, payload: payload, result: result });
-    if (error) console.error("Error saving history:", error);
-}
-
-async function loadHistory() {
-    if (!currentUser) return;
-    historyList.innerHTML = '<li>Loading...</li>';
-    const { data, error } = await _supabase.from('conversations').select('*').order('created_at', { ascending: false }).limit(20);
-    if (error) {
-        historyList.innerHTML = '<li>Error loading history.</li>';
-    } else {
-        renderHistory(data);
-    }
-}
-
+async function saveConversation(payload, result) { if (!currentUser) return; const { error } = await _supabase.from('conversations').insert({ user_id: currentUser.id, payload: payload, result: result }); if (error) console.error("Error saving history:", error); }
+async function loadHistory() { if (!currentUser) return; historyList.innerHTML = '<li>Loading...</li>'; const { data, error } = await _supabase.from('conversations').select('*').order('created_at', { ascending: false }).limit(20); if (error) { historyList.innerHTML = '<li>Error loading history.</li>'; } else { renderHistory(data); } }
 function renderHistory(items) {
     historyList.innerHTML = '';
     if (!items || items.length === 0) {
@@ -177,63 +159,18 @@ function renderHistory(items) {
 }
 
 // --- 5. CORE APP LOGIC ---
-async function callApi(payload) {
-    const response = await fetch('/.netlify/functions/translate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-    });
-    if (!response.ok) {
-        let errorMessage = `API Error: Server responded with status ${response.status}`;
-        try { const errorData = await response.json(); errorMessage = errorData.error || JSON.stringify(errorData); } catch (e) { const textError = await response.text(); if (textError) errorMessage = textError; }
-        throw new Error(errorMessage);
-    }
-    return response.json();
-}
-
+async function callApi(payload) { const response = await fetch('/.netlify/functions/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) { let errorMessage = `API Error: Server responded with status ${response.status}`; try { const errorData = await response.json(); errorMessage = errorData.error || JSON.stringify(errorData); } catch (e) { const textError = await response.text(); if (textError) errorMessage = textError; } throw new Error(errorMessage); } return response.json(); }
 async function handleApiCall() {
-    if (!currentUser) {
-        showNotification('Please log in to use the app.');
-        return;
-    }
-
-    const providerKeyMap = {
-        chatgpt: 'openai_key',
-        gemini: 'gemini_key',
-        claude: 'claude_key',
-    };
+    if (!currentUser) { showNotification('Please log in to use the app.'); return; }
+    const providerKeyMap = { chatgpt: 'openai_key', gemini: 'gemini_key', claude: 'claude_key' };
     const provider = aiProviderSelect.value;
     const requiredKey = providerKeyMap[provider];
     const userApiKey = userApiKeys[requiredKey];
-
-    if (!userApiKey) {
-        showNotification(`Please add your ${provider} API key in settings.`);
-        settingsModal.style.display = 'flex';
-        return;
-    }
-
+    if (!userApiKey) { showNotification(`Please add your ${provider} API key in settings.`); settingsModal.style.display = 'flex'; return; }
     const code = codeInput.value;
-    if (!code.trim()) {
-        showNotification('Please enter some code.');
-        return;
-    }
-
-    loadingSpinner.style.display = 'block';
-    pythonOutput.style.opacity = '0';
-    pythonOutput.value = '';
-    translateButton.disabled = true;
-    downloadButton.disabled = true;
-
-    const payload = {
-        user_api_key: userApiKey,
-        ai_provider: provider,
-        model_version: modelVersionSelect.value,
-        action: actionSelect.value,
-        code: code,
-        inputLang: inputLangSelect.value,
-        outputLang: outputLangSelect.value
-    };
-
+    if (!code.trim()) { showNotification('Please enter some code.'); return; }
+    loadingSpinner.style.display = 'flex'; pythonOutput.style.opacity = '0'; pythonOutput.value = ''; translateButton.disabled = true; downloadButton.disabled = true;
+    const payload = { user_api_key: userApiKey, ai_provider: provider, model_version: modelVersionSelect.value, action: actionSelect.value, code: code, inputLang: inputLangSelect.value, outputLang: outputLangSelect.value };
     try {
         const data = await callApi(payload);
         const result = data.pythonCode;
@@ -255,7 +192,50 @@ async function handleApiCall() {
 aiProviderSelect.addEventListener('change', populateModels);
 translateButton.addEventListener('click', handleApiCall);
 uploadInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (!file) { uploadedFileName = null; return; } uploadedFileName = file.name.split('.').slice(0, -1).join('.'); const reader = new FileReader(); reader.onload = (e) => { codeInput.value = e.target.result; }; reader.readAsText(file); });
-downloadButton.addEventListener('click', () => { const outputContent = pythonOutput.value; if (!outputContent || outputContent.startsWith('Error:')) { showNotification('No valid code to download.'); return; } const blob = new Blob([outputContent], { type: 'text/plain' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); const action = actionSelect.value; let filename; const lang = outputLangSelect.options[outputLangSelect.selectedIndex].text.toLowerCase(); const extensionMap = { 'python': 'py', 'javascript': 'js', 'powershell': 'ps1', 'c#': 'cs', 'go': 'go' }; const extension = extensionMap[lang] || 'txt'; if ((action === 'translate' || action === 'add_comments' || action === 'debug') && uploadedFileName) { filename = `${uploadedFileName}.${extension}`; } else { switch(action) { case 'translate': filename = `translated_script.${extension}`; break; case 'explain': filename = 'explanation.txt'; break; case 'debug': filename = `debugged_script.${extension}`; break; case 'add_comments': filename = `commented_script.${extension}`; break; default: filename = 'result.txt'; } } link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); });
+
+// --- UPDATED: Download Button Logic ---
+downloadButton.addEventListener('click', () => {
+    const outputContent = pythonOutput.value;
+    if (!outputContent || outputContent.startsWith('Error:')) {
+        showNotification('No valid code to download.');
+        return;
+    }
+    const blob = new Blob([outputContent], { type: 'text/plain' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    const action = actionSelect.value;
+    let filename;
+    
+    // For optimize, the output language is the same as the input
+    const langKey = (action === 'optimize') ? inputLangSelect.value : outputLangSelect.value;
+    const lang = langKey.toLowerCase();
+    
+    const extensionMap = { 'python': 'py', 'javascript': 'js', 'powershell': 'ps1', 'c#': 'cs', 'go': 'go', 'azure cli': 'azcli', 'bicep': 'bicep' };
+    const extension = extensionMap[lang] || 'txt';
+
+    // Check if a file was uploaded and the action produces code
+    const isCodeAction = ['translate', 'add_comments', 'debug', 'optimize'].includes(action);
+    if (isCodeAction && uploadedFileName) {
+        // Use the original filename with a suffix for the action
+        const suffix = (action === 'translate') ? '' : `_${action}`;
+        filename = `${uploadedFileName}${suffix}.${extension}`;
+    } else {
+        // Fallback to generic names
+        switch(action) {
+            case 'translate': filename = `translated_script.${extension}`; break;
+            case 'optimize': filename = `optimized_script.${extension}`; break; // New case
+            case 'explain': filename = 'explanation.txt'; break;
+            case 'debug': filename = `debugged_script.${extension}`; break;
+            case 'add_comments': filename = `commented_script.${extension}`; break;
+            default: filename = 'result.txt';
+        }
+    }
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+});
 
 // --- INITIALIZATION ---
 checkInitialSession();
