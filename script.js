@@ -1,9 +1,6 @@
 // --- 1. SUPABASE SETUP ---
-// Replace with your actual Supabase Project URL and Anon Key
 const SUPABASE_URL = 'https://dlsbcrwkmjzhdwyzsola.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsc2JjcndrbWp6aGR3eXpzb2xhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MzAxNTQsImV4cCI6MjA2OTQwNjE1NH0.VqsHrjA3-FHNCoiDmRDiOFZwnblrl-AZrEAtC6vRUHY';
-
-// Initialize the Supabase client
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -14,26 +11,21 @@ const pythonOutput = document.getElementById('py-output');
 const uploadInput = document.getElementById('ps-upload');
 const downloadButton = document.getElementById('download-btn');
 const loadingSpinner = document.getElementById('loading-spinner');
-const livePreviewToggle = document.getElementById('live-preview');
 const actionSelect = document.getElementById('action-select');
 const inputLangSelect = document.getElementById('input-lang');
 const outputLangSelect = document.getElementById('output-lang');
 const aiProviderSelect = document.getElementById('ai-provider-select');
-const authButton = document.getElementById('auth-btn'); // New auth button
+const authButton = document.getElementById('auth-btn');
 
 // --- 2. AUTHENTICATION LOGIC ---
-// Function to handle user login
 async function signInWithGithub() {
-    const { error } = await _supabase.auth.signInWithOAuth({
-        provider: 'github',
-    });
+    const { error } = await _supabase.auth.signInWithOAuth({ provider: 'github' });
     if (error) {
         console.error('Error logging in:', error);
         showNotification(`Error: ${error.message}`);
     }
 }
 
-// Function to handle user logout
 async function signOut() {
     const { error } = await _supabase.auth.signOut();
     if (error) {
@@ -42,7 +34,6 @@ async function signOut() {
     }
 }
 
-// Function to update the UI based on auth state
 function updateAuthUI(user) {
     if (user) {
         authButton.textContent = 'Logout';
@@ -53,21 +44,17 @@ function updateAuthUI(user) {
     }
 }
 
-// Listen for changes in authentication state
 _supabase.auth.onAuthStateChange((event, session) => {
     updateAuthUI(session?.user);
 });
 
-// Initial check for user session on page load
 async function checkInitialSession() {
     const { data: { session } } = await _supabase.auth.getSession();
     updateAuthUI(session?.user);
 }
-checkInitialSession(); // Run the check when the script loads
+checkInitialSession();
 // --- END OF AUTH LOGIC ---
 
-
-// --- The rest of your script remains largely the same ---
 let uploadedFileName = null;
 const translationCache = new Map();
 const maxCacheSize = 50;
@@ -175,24 +162,7 @@ async function handleApiCall() {
     }
 }
 
-let debounceTimeout;
-let isPasting = false;
-
-codeInput.addEventListener('paste', () => {
-    isPasting = true;
-    uploadedFileName = null;
-});
-
-codeInput.addEventListener('input', () => {
-    if (isPasting) {
-        isPasting = false;
-        return;
-    }
-    uploadedFileName = null; 
-    if (!livePreviewToggle.checked) return;
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(handleApiCall, 1000);
-});
+// REMOVED: All live preview and paste logic is gone
 
 translateButton.addEventListener('click', handleApiCall);
 
@@ -228,10 +198,7 @@ downloadButton.addEventListener('click', () => {
     URL.revokeObjectURL(link.href);
 });
 
-const xIcon = document.querySelector('.x-icon');
-if (xIcon) { xIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on X coming soon!'); }); }
-const githubIcon = document.querySelector('.github-icon');
-if (githubIcon) { githubIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on GitHub coming soon!'); }); }
+// REMOVED: Social button listeners
 
 if (document.getElementById('particles-js')) {
     particlesJS('particles-js', {

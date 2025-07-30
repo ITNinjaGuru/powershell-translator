@@ -61,6 +61,16 @@ body {
     text-align: center;
 }
 
+/* --- NEW: Sidebar Footer Styling --- */
+.sidebar-footer {
+    margin-top: auto; /* Pushes this section to the bottom */
+    padding-top: 20px;
+    border-top: 1px solid var(--glass-border);
+    display: flex;
+    justify-content: center; /* Centers the button horizontally */
+    align-items: center;
+}
+
 .main-content {
     flex-grow: 1;
     padding: 20px 40px;
@@ -141,9 +151,8 @@ body {
     max-width: 1400px;
 }
 
-/* --- UPDATED: Editor Group --- */
 .editor-group {
-    position: relative; /* This is crucial for the floating button */
+    position: relative;
     width: 100%;
 }
 
@@ -152,7 +161,7 @@ textarea {
     height: 40vh;
     min-height: 200px;
     padding: 20px;
-    padding-top: 60px; /* Add space at the top for the button */
+    padding-top: 60px;
     font-size: 14px;
     font-family: 'Courier New', Courier, monospace;
     color: var(--text-primary);
@@ -178,17 +187,17 @@ textarea:focus, textarea:hover {
     box-shadow: 0 0 20px rgba(125, 249, 255, 0.6), 0 0 30px rgba(125, 249, 255, 0.3);
 }
 
-/* --- UPDATED: Floating Buttons --- */
+/* --- Buttons --- */
 .upload-section, .download-section {
     position: absolute;
     top: 15px;
     right: 15px;
-    padding: 0; /* Remove old padding */
+    padding: 0;
     z-index: 10;
 }
 
 button, .upload-label {
-    padding: 8px 16px; /* Smaller padding for a sleeker look */
+    padding: 8px 16px;
     font-size: 14px;
     color: var(--text-secondary);
     background-color: rgba(125, 249, 255, 0.1);
@@ -205,12 +214,14 @@ button:hover, .upload-label:hover {
     box-shadow: 0 0 15px rgba(125, 249, 255, 0.5);
 }
 
-#translate-btn {
-    margin: 10px 0;
-    /* Reset floating styles for the main process button */
+#translate-btn, #auth-btn {
     position: static;
     padding: 12px 24px;
     font-size: 16px;
+}
+
+#translate-btn {
+    margin: 10px 0;
 }
 
 button:disabled {
@@ -222,25 +233,12 @@ button:disabled {
     box-shadow: none;
 }
 
-.toggle-section {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid var(--glass-border);
-    text-align: center;
-    color: var(--text-secondary);
-}
-
 /* Other styles... */
 .loading-spinner { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; }
 .spinner { width: 40px; height: 40px; border: 4px solid var(--primary-accent); border-top: 4px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 .notification { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: var(--glass-background); backdrop-filter: blur(10px); border-radius: 8px; color: var(--text-primary); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); z-index: 1000; opacity: 0; transition: opacity 0.3s ease; }
 .notification.show { opacity: 1; }
-.social-bar { position: fixed; right: 20px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 1000; }
-.social-icon { width: 40px; height: 40px; background: var(--primary-accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #050509; text-decoration: none; font-size: 1.2rem; transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.social-icon:hover { transform: scale(1.2); box-shadow: 0 0 15px rgba(125, 249, 255, 0.5); }
-.github-icon { background: #333; color: #fff; }
-.github-icon:hover { background: #444; }
 
 /* Responsive Design */
 @media (max-width: 1024px) {
@@ -249,5 +247,8 @@ button:disabled {
     .controls-container { flex-direction: row; flex-wrap: wrap; justify-content: center; }
     .control-group { width: 200px; }
     .main-content { padding: 20px; }
-    .toggle-section { margin-top: 20px; border-top: none; }
+    .sidebar-footer {
+        margin-top: 20px;
+        border-top: none;
+    }
 }
