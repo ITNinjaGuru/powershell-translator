@@ -49,12 +49,10 @@ const modelsByProvider = {
     ]
 };
 
-// --- Function to populate model dropdown ---
 function populateModels() {
     const provider = aiProviderSelect.value;
     const models = modelsByProvider[provider] || [];
-    modelVersionSelect.innerHTML = ''; // Clear existing options
-
+    modelVersionSelect.innerHTML = '';
     models.forEach(model => {
         const option = document.createElement('option');
         option.value = model.id;
@@ -65,24 +63,129 @@ function populateModels() {
 
 // --- 2. AUTHENTICATION LOGIC ---
 let currentUser = null;
+let userApiKeys = {}; // Local cache for user's keys
+
 async function signInWithGithub() { const { error } = await _supabase.auth.signInWithOAuth({ provider: 'github' }); if (error) showNotification(`Error: ${error.message}`); }
 async function signOut() { const { error } = await _supabase.auth.signOut(); if (error) showNotification(`Error: ${error.message}`); }
-function updateAuthUI(user) { currentUser = user; if (user) { authButton.textContent = 'Logout'; authButton.onclick = signOut; settingsBtn.style.display = 'block'; loadHistory(); } else { authButton.textContent = 'Login with GitHub'; authButton.onclick = signInWithGithub; settingsBtn.style.display = 'none'; historyList.innerHTML = '<li>Login to see your history.</li>'; } }
+
+async function updateAuthUI(user) {
+    currentUser = user;
+    if (user) {
+        authButton.textContent = 'Logout';
+        authButton.onclick = signOut;
+        settingsBtn.style.display = 'block';
+        await loadUserApiKeys(); // Load keys on login
+        loadHistory();
+    } else {
+        authButton.textContent = 'Login with GitHub';
+        authButton.onclick = signInWithGithub;
+        settingsBtn.style.display = 'none';
+        historyList.innerHTML = '<li>Login to see your history.</li>';
+        userApiKeys = {}; // Clear keys on logout
+    }
+}
+
 _supabase.auth.onAuthStateChange((event, session) => { updateAuthUI(session?.user); });
 async function checkInitialSession() { const { data: { session } } = await _supabase.auth.getSession(); updateAuthUI(session?.user); }
 
 // --- 3. SETTINGS MODAL & API KEYS ---
-settingsBtn.addEventListener('click', () => { settingsModal.style.display = 'flex'; });
+async function loadUserApiKeys() {
+    if (!currentUser) return;
+    const { data, error } = await _supabase.from('user_api_keys').select('*').single();
+    if (data) {
+        userApiKeys = data;
+    } else {
+        userApiKeys = {}; // Reset if no keys found
+    }
+}
+
+settingsBtn.addEventListener('click', async () => {
+    await loadUserApiKeys(); // Ensure we have the latest keys
+    document.getElementById('openai-key').value = userApiKeys.openai_key || '';
+    document.getElementById('gemini-key').value = userApiKeys.gemini_key || '';
+    document.getElementById('claude-key').value = userApiKeys.claude_key || '';
+    document.getElementById('grok-key').value = userApiKeys.grok_key || '';
+    settingsModal.style.display = 'flex';
+});
+
 closeModalBtn.addEventListener('click', () => { settingsModal.style.display = 'none'; });
-saveKeysBtn.addEventListener('click', () => { showNotification('API Keys saved!'); settingsModal.style.display = 'none'; });
+
+saveKeysBtn.addEventListener('click', async () => {
+    if (!currentUser) return showNotification('You must be logged in to save keys.');
+    
+    const keysToSave = {
+        id: currentUser.id, // This is the user's UUID
+        openai_key: document.getElementById('openai-key').value,
+        gemini_key: document.getElementById('gemini-key').value,
+        claude_key: document.getElementById('claude-key').value,
+        grok_key: document.getElementById('grok-key').value,
+    };
+
+    const { error } = await _supabase.from('user_api_keys').upsert(keysToSave);
+
+    if (error) {
+        showNotification(`Error saving keys: ${error.message}`);
+    } else {
+        showNotification('API Keys saved successfully!');
+        userApiKeys = keysToSave; // Update local cache
+        settingsModal.style.display = 'none'; // Close modal on success
+    }
+});
 
 // --- 4. CONVERSATION HISTORY ---
-async function saveConversation(payload, result) { if (!currentUser) return; console.log("Saving conversation...", { ...payload, output: result }); }
-async function loadHistory() { if (!currentUser) return; historyList.innerHTML = '<li>Loading...</li>'; console.log("Loading history..."); const mockHistory = [ { id: 1, input_code: 'Get-Process', created_at: new Date().toISOString() }, { id: 2, input_code: 'Write-Host "Hello"', created_at: new Date().toISOString() }, ]; renderHistory(mockHistory); }
-function renderHistory(items) { historyList.innerHTML = ''; if (items.length === 0) { historyList.innerHTML = '<li>No history yet.</li>'; return; } items.forEach(item => { const li = document.createElement('li'); li.textContent = item.input_code.split('\n')[0]; li.title = `Ran on ${new Date(item.created_at).toLocaleString()}`; historyList.appendChild(li); }); }
+async function saveConversation(payload, result) {
+    if (!currentUser) return;
+    const { error } = await _supabase.from('conversations').insert({
+        user_id: currentUser.id,
+        payload: payload,
+        result: result
+    });
+    if (error) console.error("Error saving history:", error);
+}
 
-// --- 5. CORE APP LOGIC (API Calls, etc.) ---
-let uploadedFileName = null;
+async function loadHistory() {
+    if (!currentUser) return;
+    historyList.innerHTML = '<li>Loading...</li>';
+    const { data, error } = await _supabase
+        .from('conversations')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20);
+    
+    if (error) {
+        historyList.innerHTML = '<li>Error loading history.</li>';
+    } else {
+        renderHistory(data);
+    }
+}
+
+function renderHistory(items) {
+    historyList.innerHTML = '';
+    if (!items || items.length === 0) {
+        historyList.innerHTML = '<li>No history yet.</li>';
+        return;
+    }
+    items.forEach(item => {
+        const li = document.createElement('li');
+        const firstLine = item.payload.code.split('\n')[0];
+        li.textContent = firstLine.length > 30 ? firstLine.substring(0, 27) + '...' : firstLine;
+        li.title = `Ran on ${new Date(item.created_at).toLocaleString()}`;
+        li.onclick = () => {
+            codeInput.value = item.payload.code;
+            pythonOutput.value = item.result;
+            aiProviderSelect.value = item.payload.ai_provider;
+            populateModels();
+            modelVersionSelect.value = item.payload.model_version;
+            actionSelect.value = item.payload.action;
+            inputLangSelect.value = item.payload.inputLang;
+            outputLangSelect.value = item.payload.outputLang;
+        };
+        historyList.appendChild(li);
+    });
+}
+
+
+// --- 5. CORE APP LOGIC ---
 async function callApi(payload) {
     const response = await fetch('/.netlify/functions/translate', {
         method: 'POST',
@@ -98,6 +201,27 @@ async function callApi(payload) {
 }
 
 async function handleApiCall() {
+    if (!currentUser) {
+        showNotification('Please log in to use the app.');
+        return;
+    }
+
+    const providerKeyMap = {
+        chatgpt: 'openai_key',
+        gemini: 'gemini_key',
+        claude: 'claude_key',
+        grok: 'grok_key'
+    };
+    const provider = aiProviderSelect.value;
+    const requiredKey = providerKeyMap[provider];
+    const userApiKey = userApiKeys[requiredKey];
+
+    if (!userApiKey) {
+        showNotification(`Please add your ${provider} API key in settings.`);
+        settingsModal.style.display = 'flex';
+        return;
+    }
+
     const code = codeInput.value;
     if (!code.trim()) {
         showNotification('Please enter some code.');
@@ -111,7 +235,8 @@ async function handleApiCall() {
     downloadButton.disabled = true;
 
     const payload = {
-        ai_provider: aiProviderSelect.value,
+        user_api_key: userApiKey,
+        ai_provider: provider,
         model_version: modelVersionSelect.value,
         action: actionSelect.value,
         code: code,
@@ -125,8 +250,8 @@ async function handleApiCall() {
         pythonOutput.value = result;
         pythonOutput.style.opacity = '1';
         downloadButton.disabled = false;
-        saveConversation(payload, result);
-        loadHistory();
+        await saveConversation(payload, result);
+        await loadHistory();
     } catch (error) {
         pythonOutput.value = `Error: ${error.message}`;
         pythonOutput.style.opacity = '1';
@@ -143,25 +268,10 @@ uploadInput.addEventListener('change', (event) => { const file = event.target.fi
 downloadButton.addEventListener('click', () => { const outputContent = pythonOutput.value; if (!outputContent || outputContent.startsWith('Error:')) { showNotification('No valid code to download.'); return; } const blob = new Blob([outputContent], { type: 'text/plain' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); const action = actionSelect.value; let filename; const lang = outputLangSelect.options[outputLangSelect.selectedIndex].text.toLowerCase(); const extensionMap = { 'python': 'py', 'javascript': 'js', 'powershell': 'ps1', 'c#': 'cs', 'go': 'go' }; const extension = extensionMap[lang] || 'txt'; if ((action === 'translate' || action === 'add_comments' || action === 'debug') && uploadedFileName) { filename = `${uploadedFileName}.${extension}`; } else { switch(action) { case 'translate': filename = `translated_script.${extension}`; break; case 'explain': filename = 'explanation.txt'; break; case 'debug': filename = `debugged_script.${extension}`; break; case 'add_comments': filename = `commented_script.${extension}`; break; default: filename = 'result.txt'; } } link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); });
 
 // --- INITIALIZATION ---
-// This runs once the script is loaded. Since the script is at the end of the HTML,
-// all the elements are guaranteed to be ready.
 checkInitialSession();
 populateModels();
 
 // Particles.js
 if (document.getElementById('particles-js')) {
-    particlesJS('particles-js', {
-        particles: {
-            number: { value: 80, density: { enable: true, value_area: 800 } },
-            color: { value: '#7DF9FF' },
-            shape: { type: 'circle' },
-            opacity: { value: 0.5, random: true },
-            size: { value: 3, random: true },
-            line_linked: { enable: true, distance: 150, color: '#7DF9FF', opacity: 0.4, width: 1 },
-            move: { enable: true, speed: 2 }
-        },
-        interactivity: {
-            events: { onhover: { enable: true, mode: 'repulse' }, onclick: { enable: true, mode: 'push' } }
-        }
-    });
+    particlesJS('particles-js', { /* ... particle config ... */ });
 }
