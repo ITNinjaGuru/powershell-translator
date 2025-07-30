@@ -42,9 +42,9 @@ const modelsByProvider = {
         
     ],
     grok: [
-        { id: 'grok-1', name: 'Grok 1' },
-        { id: 'grok-1.5', name: 'Grok 1.5 (Beta)' },
-        { id: 'grok-1.5-vision', name: 'Grok 1.5 Vision (Beta)' },
+        { id: 'grok-4-0709', name: 'Grok 4' },
+        { id: 'grok-3', name: 'Grok 3' },
+        { id: 'grok-3-mini', name: 'Grok 3 mini' },
     ]
 };
 
@@ -109,25 +109,41 @@ settingsBtn.addEventListener('click', async () => {
 
 closeModalBtn.addEventListener('click', () => { settingsModal.style.display = 'none'; });
 
+// --- UPDATED: Robust "Save Keys" button logic ---
 saveKeysBtn.addEventListener('click', async () => {
     if (!currentUser) return showNotification('You must be logged in to save keys.');
     
     const keysToSave = {
         id: currentUser.id, // This is the user's UUID
-        openai_key: document.getElementById('openai-key').value,
-        gemini_key: document.getElementById('gemini-key').value,
-        claude_key: document.getElementById('claude-key').value,
-        grok_key: document.getElementById('grok-key').value,
+        openai_key: document.getElementById('openai-key').value.trim(),
+        gemini_key: document.getElementById('gemini-key').value.trim(),
+        claude_key: document.getElementById('claude-key').value.trim(),
+        grok_key: document.getElementById('grok-key').value.trim(),
     };
 
-    const { error } = await _supabase.from('user_api_keys').upsert(keysToSave);
+    try {
+        // Provide user feedback that something is happening
+        saveKeysBtn.disabled = true;
+        saveKeysBtn.textContent = 'Saving...';
 
-    if (error) {
-        showNotification(`Error saving keys: ${error.message}`);
-    } else {
+        const { error } = await _supabase.from('user_api_keys').upsert(keysToSave);
+
+        if (error) {
+            // If there's an error, throw it to be caught by the catch block
+            throw error;
+        }
+
         showNotification('API Keys saved successfully!');
         userApiKeys = keysToSave; // Update local cache
         settingsModal.style.display = 'none'; // Close modal on success
+
+    } catch (error) {
+        showNotification(`Error saving keys: ${error.message}`);
+        console.error("Error saving keys:", error);
+    } finally {
+        // This always runs, ensuring the button is usable again
+        saveKeysBtn.disabled = false;
+        saveKeysBtn.textContent = 'Save Keys';
     }
 });
 
