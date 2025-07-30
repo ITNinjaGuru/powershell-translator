@@ -42,10 +42,9 @@ const modelsByProvider = {
         
     ],
     grok: [
-        { id: 'grok-4-0709', name: 'Grok 4' },
-        { id: 'grok-3-latest', name: 'Grok 3-Latest' },
-        { id: 'grok-3-mini', name: 'Grok 3 Mini' },
-
+        { id: 'grok-1', name: 'Grok 1' },
+        { id: 'grok-1.5', name: 'Grok 1.5 (Beta)' },
+        { id: 'grok-1.5-vision', name: 'Grok 1.5 Vision (Beta)' },
     ]
 };
 
