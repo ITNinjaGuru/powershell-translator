@@ -71,18 +71,19 @@ button:disabled { background-color: #3a4a6b; color: #8c8c8c; border-color: #3a4a
 .reveal-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 5px; cursor: pointer; color: var(--text-primary); }
 .reveal-btn:hover { color: var(--primary-accent); }
 
-/* --- UPDATED: New "Jump and Slide" Loading Spinner --- */
+/* --- "Jump and Slide" Loading Spinner --- */
 .loading-spinner {
     position: fixed;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    /* UPDATED: Offset the spinner to center it in the main content area */
+    transform: translate(calc(-50% + 140px), -50%);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
-    width: 150px; /* Give it some width to slide within */
+    width: 150px;
     height: 50px;
 }
 
@@ -94,7 +95,6 @@ button:disabled { background-color: #3a4a6b; color: #8c8c8c; border-color: #3a4a
     animation: jump-and-slide 2s infinite ease-in-out;
 }
 
-/* Stagger the animation for each dot */
 .dot:nth-child(1) { animation-delay: 0s; }
 .dot:nth-child(2) { animation-delay: 0.1s; }
 .dot:nth-child(3) { animation-delay: 0.2s; }
@@ -102,26 +102,12 @@ button:disabled { background-color: #3a4a6b; color: #8c8c8c; border-color: #3a4a
 .dot:nth-child(5) { animation-delay: 0.4s; }
 
 @keyframes jump-and-slide {
-    0%, 100% {
-        transform: translate(0, 0);
-        opacity: 1;
-    }
-    25% {
-        transform: translateY(-25px) scale(1.1); /* Jump up */
-    }
-    50% {
-        transform: translate(0, 0); /* Land back */
-    }
-    75% {
-        transform: translateX(40px) scale(0.5); /* Slide right and shrink */
-        opacity: 0;
-    }
-    80% {
-        transform: translateX(-80px); /* Instantly move to the far left, off-screen */
-        opacity: 0;
-    }
+    0%, 100% { transform: translate(0, 0); opacity: 1; }
+    25% { transform: translateY(-25px) scale(1.1); }
+    50% { transform: translate(0, 0); }
+    75% { transform: translateX(40px) scale(0.5); opacity: 0; }
+    80% { transform: translateX(-80px); opacity: 0; }
 }
-/* --- END OF SPINNER UPDATE --- */
 
 .notification { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: var(--glass-background); backdrop-filter: blur(10px); border-radius: 8px; color: var(--text-primary); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); z-index: 3000; opacity: 0; transition: opacity 0.3s ease; }
 .notification.show { opacity: 1; }
@@ -133,4 +119,9 @@ button:disabled { background-color: #3a4a6b; color: #8c8c8c; border-color: #3a4a
     .control-group { width: 200px; }
     .main-content { padding: 20px; }
     .sidebar-footer { margin-top: 20px; border-top: none; }
+
+    /* UPDATED: Reset spinner position for stacked mobile layout */
+    .loading-spinner {
+        transform: translate(-50%, -50%);
+    }
 }
