@@ -23,67 +23,21 @@ body {
     display: flex;
     min-height: 100vh;
     position: relative;
-    overflow: hidden; /* Prevent body scroll when modal is open */
+    overflow: hidden;
 }
 
 #particles-js { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
 
 /* --- App Wrapper & Sidebar Layout --- */
 .app-wrapper { display: flex; width: 100%; height: 100vh; }
-.sidebar {
-    width: 280px;
-    background-color: var(--sidebar-bg);
-    padding: 25px;
-    display: flex;
-    flex-direction: column;
-    border-right: 1px solid var(--glass-border);
-    flex-shrink: 0;
-}
+.sidebar { width: 280px; background-color: var(--sidebar-bg); padding: 25px; display: flex; flex-direction: column; border-right: 1px solid var(--glass-border); flex-shrink: 0; }
 .sidebar-header h1 { font-family: 'Orbitron', sans-serif; color: var(--text-secondary); font-size: 2rem; margin: 0; text-align: center; }
-
-/* --- NEW: History Section --- */
-.history-section {
-    margin-top: 30px;
-    flex-grow: 1; /* Allows this section to fill available space */
-    overflow-y: auto; /* Add scrollbar if history is long */
-}
-.history-section h2 {
-    font-family: 'Orbitron', sans-serif;
-    font-size: 1rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-bottom: 1px solid var(--glass-border);
-    padding-bottom: 10px;
-    margin: 0 0 10px 0;
-}
-#history-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-#history-list li {
-    padding: 10px;
-    border-radius: 6px;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    transition: background-color 0.2s;
-}
-#history-list li:hover {
-    background-color: rgba(125, 249, 255, 0.1);
-}
-
-.sidebar-footer {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid var(--glass-border);
-    display: flex;
-    justify-content: space-between; /* Space out login and settings */
-    align-items: center;
-}
-
-/* --- Main content, controls, textareas are mostly unchanged --- */
+.history-section { margin-top: 30px; flex-grow: 1; overflow-y: auto; }
+.history-section h2 { font-family: 'Orbitron', sans-serif; font-size: 1rem; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; margin: 0 0 10px 0; }
+#history-list { list-style: none; padding: 0; margin: 0; }
+#history-list li { padding: 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background-color 0.2s; }
+#history-list li:hover { background-color: rgba(125, 249, 255, 0.1); }
+.sidebar-footer { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--glass-border); display: flex; justify-content: space-between; align-items: center; }
 .main-content { flex-grow: 1; padding: 20px 40px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
 .tagline { color: var(--text-secondary); font-size: 1.2rem; text-align: center; margin-bottom: 1.5rem; text-shadow: 0 0 10px rgba(125, 249, 255, 0.5); }
 .controls-container { display: flex; flex-direction: column; gap: 20px; }
@@ -95,19 +49,15 @@ body {
 .editor-group { position: relative; width: 100%; }
 textarea { width: 100%; height: 40vh; min-height: 200px; padding: 20px; padding-top: 60px; font-size: 14px; font-family: 'Courier New', Courier, monospace; color: var(--text-primary); resize: both; border-radius: 12px; border: 2px solid var(--glass-border); background: rgba(5, 5, 9, 0.8); transition: opacity 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; box-sizing: border-box; }
 textarea:focus, textarea:hover { outline: none; border-color: var(--primary-accent); box-shadow: 0 0 20px rgba(125, 249, 255, 0.6), 0 0 30px rgba(125, 249, 255, 0.3); }
-
-/* --- Buttons --- */
 .upload-section, .download-section { position: absolute; top: 15px; right: 15px; padding: 0; z-index: 10; }
 button, .upload-label { padding: 8px 16px; font-size: 14px; color: var(--text-secondary); background-color: rgba(125, 249, 255, 0.1); border: 1px solid var(--primary-accent); border-radius: 8px; cursor: pointer; transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease; }
 button:hover, .upload-label:hover { background-color: rgba(125, 249, 255, 0.3); color: #fff; transform: translateY(-3px); box-shadow: 0 0 15px rgba(125, 249, 255, 0.5); }
 #translate-btn, #auth-btn, #save-keys-btn { position: static; padding: 12px 24px; font-size: 16px; }
 #translate-btn { margin: 10px 0; }
-#auth-btn { flex-grow: 1; } /* Allow login button to take up space */
+#auth-btn { flex-grow: 1; }
 .icon-btn { padding: 8px; background-color: transparent; border: none; }
 .icon-btn:hover { background-color: rgba(125, 249, 255, 0.1); }
 button:disabled { background-color: #3a4a6b; color: #8c8c8c; border-color: #3a4a6b; cursor: not-allowed; transform: none; box-shadow: none; }
-
-/* --- NEW: Settings Modal --- */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); z-index: 2000; display: flex; justify-content: center; align-items: center; }
 .modal-content { background-color: var(--sidebar-bg); padding: 30px; border-radius: 12px; border: 1px solid var(--glass-border); width: 90%; max-width: 500px; position: relative; }
 .close-btn { position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 2rem; color: var(--text-primary); cursor: pointer; }
@@ -117,10 +67,39 @@ button:disabled { background-color: #3a4a6b; color: #8c8c8c; border-color: #3a4a
 .input-group input { padding: 10px; border-radius: 6px; border: 1px solid var(--glass-border); background-color: var(--main-bg); color: var(--text-primary); font-family: 'Courier New', monospace; }
 #save-keys-btn { width: 100%; }
 
-/* Other styles... */
-.loading-spinner { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000; }
-.spinner { width: 40px; height: 40px; border: 4px solid var(--primary-accent); border-top: 4px solid transparent; border-radius: 50%; animation: spin 1s linear infinite; }
-@keyframes spin { 100% { transform: rotate(360deg); } }
+/* --- UPDATED: New Loading Spinner --- */
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    display: flex; /* Use flexbox for the bars */
+    gap: 5px;
+}
+
+.bar {
+    width: 8px;
+    height: 40px;
+    background-color: var(--primary-accent);
+    animation: equalize 1.2s infinite ease-in-out;
+}
+
+/* Stagger the animation for each bar */
+.bar:nth-child(2) { animation-delay: -1.1s; }
+.bar:nth-child(3) { animation-delay: -1.0s; }
+.bar:nth-child(4) { animation-delay: -0.9s; }
+
+@keyframes equalize {
+    0%, 40%, 100% {
+        transform: scaleY(0.1);
+    }
+    20% {
+        transform: scaleY(1.0);
+    }
+}
+/* --- END OF SPINNER UPDATE --- */
+
 .notification { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: var(--glass-background); backdrop-filter: blur(10px); border-radius: 8px; color: var(--text-primary); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); z-index: 3000; opacity: 0; transition: opacity 0.3s ease; }
 .notification.show { opacity: 1; }
 

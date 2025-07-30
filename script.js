@@ -27,13 +27,16 @@ const modelVersionSelect = document.getElementById('model-version-select');
 const modelsByProvider = {
     claude: [
         { id: 'claude-sonnet-4-20250514', name: 'Sonnet 4' },
-        { id: 'claude-3-opus-20240229', name: 'Opus 3' },
-        { id: 'claude-3.5-sonnet-20240620', name: 'Sonnet 3.5' },
+        { id: 'claude-opus-4-20250514', name: 'Opus 4' },
+        { id: 'claude-3.5-haiku-20241022', name: 'Haiku 3.5' },
+        { id: 'claude-3-7-sonnet-20250219', name: 'Sonnet 3.7' },
     ],
     chatgpt: [
         { id: 'chatgpt-4o-latest', name: 'GPT-4o-latest' },
         { id: 'o4-mini-2025-04-16', name: 'GPT-o4-mini' },
         { id: 'gpt-4.1-2025-04-14', name: 'GPT-4.1' },
+        { id: 'o3-2025-04-16', name: 'GPT-o3' },
+
     ],
     gemini: [
         { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
@@ -42,10 +45,10 @@ const modelsByProvider = {
         
     ],
     grok: [
-        { id: 'grok-1', name: 'Grok 1' },
-        { id: 'grok-1.5', name: 'Grok 1.5 (Beta)' },
-        { id: 'grok-1.5-vision', name: 'Grok 1.5 Vision (Beta)' },
-    ]
+        { id: 'grok-4-latest', name: 'Grok 4' },
+        { id: 'grok-3-latest', name: 'Grok 3 Latest' },
+        { id: 'grok-3-mini-latest', name: 'Grok 3 Mini Latest' },
+    ] 
 };
 
 function populateModels() {
