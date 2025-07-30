@@ -10,6 +10,9 @@
     
     <title>PoSh to Py</title>
     
+    <!-- NEW: Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -39,7 +42,6 @@
                     <label for="action-select">Action</label>
                     <select id="action-select">
                         <option value="translate" selected>Translate</option>
-                        <!-- NEW: Optimize option -->
                         <option value="optimize">Optimize Code</option>
                         <option value="explain">Explain Code</option>
                         <option value="debug">Find & Fix Bugs</option>
@@ -64,16 +66,19 @@
                         <option value="JavaScript">JavaScript</option>
                         <option value="C#">C#</option>
                         <option value="Go">Go</option>
-                        <!-- NEW: Azure options -->
                         <option value="Azure CLI">Azure CLI</option>
                         <option value="Bicep">Bicep</option>
                         <option value="PowerShell">PowerShell</option>
                     </select>
                 </div>
             </div>
-            <div class="toggle-section">
-                <label for="live-preview">Live Preview</label>
-                <input type="checkbox" id="live-preview" checked>
+            <div class="sidebar-footer">
+                <div class="toggle-section">
+                    <label for="live-preview">Live Preview</label>
+                    <input type="checkbox" id="live-preview" checked>
+                </div>
+                <!-- NEW: Auth Button -->
+                <button id="auth-btn">Login</button>
             </div>
         </aside>
 
@@ -106,6 +111,12 @@
     <div class="loading-spinner" id="loading-spinner" style="display: none;">
         <div class="spinner"></div>
     </div>
+    <div class="notification" id="notification"></div>
+    <aside class="social-bar">
+        <a href="#" class="social-icon x-icon" title="Share on X">X</a>
+        <a href="#" class="social-icon github-icon" title="Share on GitHub">GH</a>
+    </aside>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
     <script src="script.js"></script>

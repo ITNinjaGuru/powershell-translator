@@ -1,4 +1,13 @@
-// Get references to all interactive DOM elements
+// --- 1. SUPABASE SETUP ---
+// Replace with your actual Supabase Project URL and Anon Key
+const SUPABASE_URL = 'https://dlsbcrwkmjzhdwyzsola.supabase.co'; 
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsc2JjcndrbWp6aGR3eXpzb2xhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MzAxNTQsImV4cCI6MjA2OTQwNjE1NH0.VqsHrjA3-FHNCoiDmRDiOFZwnblrl-AZrEAtC6vRUHY';
+
+// Initialize the Supabase client
+const { createClient } = supabase;
+const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// --- Get references to all interactive DOM elements ---
 const translateButton = document.getElementById('translate-btn');
 const codeInput = document.getElementById('code-input');
 const pythonOutput = document.getElementById('py-output');
@@ -10,17 +19,59 @@ const actionSelect = document.getElementById('action-select');
 const inputLangSelect = document.getElementById('input-lang');
 const outputLangSelect = document.getElementById('output-lang');
 const aiProviderSelect = document.getElementById('ai-provider-select');
+const authButton = document.getElementById('auth-btn'); // New auth button
 
+// --- 2. AUTHENTICATION LOGIC ---
+// Function to handle user login
+async function signInWithGithub() {
+    const { error } = await _supabase.auth.signInWithOAuth({
+        provider: 'github',
+    });
+    if (error) {
+        console.error('Error logging in:', error);
+        showNotification(`Error: ${error.message}`);
+    }
+}
+
+// Function to handle user logout
+async function signOut() {
+    const { error } = await _supabase.auth.signOut();
+    if (error) {
+        console.error('Error logging out:', error);
+        showNotification(`Error: ${error.message}`);
+    }
+}
+
+// Function to update the UI based on auth state
+function updateAuthUI(user) {
+    if (user) {
+        authButton.textContent = 'Logout';
+        authButton.onclick = signOut;
+    } else {
+        authButton.textContent = 'Login with GitHub';
+        authButton.onclick = signInWithGithub;
+    }
+}
+
+// Listen for changes in authentication state
+_supabase.auth.onAuthStateChange((event, session) => {
+    updateAuthUI(session?.user);
+});
+
+// Initial check for user session on page load
+async function checkInitialSession() {
+    const { data: { session } } = await _supabase.auth.getSession();
+    updateAuthUI(session?.user);
+}
+checkInitialSession(); // Run the check when the script loads
+// --- END OF AUTH LOGIC ---
+
+
+// --- The rest of your script remains largely the same ---
 let uploadedFileName = null;
 const translationCache = new Map();
 const maxCacheSize = 50;
 
-/**
- * Sends a payload to the backend API function.
- * Checks cache first to avoid redundant calls.
- * @param {object} payload The data to send to the API.
- * @returns {Promise<string>} The text result from the API.
- */
 async function callApi(payload) {
     const cacheKey = JSON.stringify(payload);
     if (translationCache.has(cacheKey)) {
@@ -33,24 +84,19 @@ async function callApi(payload) {
         body: JSON.stringify(payload)
     });
 
-    // --- UPDATED: Robust Error Handling ---
     if (!response.ok) {
         let errorMessage = `API Error: Server responded with status ${response.status}`;
         try {
-            // Try to get a specific error message from the API's JSON response
             const errorData = await response.json();
             errorMessage = errorData.error || JSON.stringify(errorData);
         } catch (e) {
-            // If the error response wasn't JSON, try to read it as plain text
             const textError = await response.text();
             if (textError) {
                 errorMessage = textError;
             }
         }
-        // This throws a more informative error instead of crashing
         throw new Error(errorMessage);
     }
-    // --- END OF UPDATE ---
 
     const data = await response.json();
     const result = data.pythonCode; 
@@ -181,12 +227,12 @@ downloadButton.addEventListener('click', () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
 });
-/**
+
 const xIcon = document.querySelector('.x-icon');
 if (xIcon) { xIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on X coming soon!'); }); }
 const githubIcon = document.querySelector('.github-icon');
 if (githubIcon) { githubIcon.addEventListener('click', (e) => { e.preventDefault(); showNotification('Share on GitHub coming soon!'); }); }
-*/
+
 if (document.getElementById('particles-js')) {
     particlesJS('particles-js', {
         particles: {

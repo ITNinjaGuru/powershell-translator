@@ -60,7 +60,7 @@ exports.handler = async (event) => {
                 break;
 
             case 'gemini':
-                const geminiModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
+                const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
                 const geminiResult = await geminiModel.generateContent(fullPrompt);
                 const geminiResponse = await geminiResult.response;
                 resultText = geminiResponse.text();
