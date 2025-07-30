@@ -28,7 +28,7 @@ const modelsByProvider = {
     claude: [
         { id: 'claude-sonnet-4-20250514', name: 'Sonnet 4' },
         { id: 'claude-opus-4-20250514', name: 'Opus 4' },
-        { id: 'claude-3.5-haiku-20241022', name: 'Haiku 3.5' },
+        { id: 'claude-3-5-haiku-20241022', name: 'Haiku 3.5' },
         { id: 'claude-3-7-sonnet-20250219', name: 'Sonnet 3.7' },
     ],
     chatgpt: [
