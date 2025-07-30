@@ -16,31 +16,39 @@ const inputLangSelect = document.getElementById('input-lang');
 const outputLangSelect = document.getElementById('output-lang');
 const aiProviderSelect = document.getElementById('ai-provider-select');
 const authButton = document.getElementById('auth-btn');
+// NEW: Settings modal elements
+const settingsBtn = document.getElementById('settings-btn');
+const settingsModal = document.getElementById('settings-modal');
+const closeModalBtn = document.getElementById('close-modal-btn');
+const saveKeysBtn = document.getElementById('save-keys-btn');
+// NEW: History list
+const historyList = document.getElementById('history-list');
 
 // --- 2. AUTHENTICATION LOGIC ---
+let currentUser = null;
+
 async function signInWithGithub() {
     const { error } = await _supabase.auth.signInWithOAuth({ provider: 'github' });
-    if (error) {
-        console.error('Error logging in:', error);
-        showNotification(`Error: ${error.message}`);
-    }
+    if (error) showNotification(`Error: ${error.message}`);
 }
 
 async function signOut() {
     const { error } = await _supabase.auth.signOut();
-    if (error) {
-        console.error('Error logging out:', error);
-        showNotification(`Error: ${error.message}`);
-    }
+    if (error) showNotification(`Error: ${error.message}`);
 }
 
 function updateAuthUI(user) {
+    currentUser = user;
     if (user) {
         authButton.textContent = 'Logout';
         authButton.onclick = signOut;
+        settingsBtn.style.display = 'block'; // Show settings when logged in
+        loadHistory(); // Load user's history
     } else {
         authButton.textContent = 'Login with GitHub';
         authButton.onclick = signInWithGithub;
+        settingsBtn.style.display = 'none'; // Hide settings when logged out
+        historyList.innerHTML = '<li>Login to see your history.</li>';
     }
 }
 
@@ -53,18 +61,63 @@ async function checkInitialSession() {
     updateAuthUI(session?.user);
 }
 checkInitialSession();
-// --- END OF AUTH LOGIC ---
 
+// --- 3. SETTINGS MODAL & API KEYS ---
+settingsBtn.addEventListener('click', () => {
+    settingsModal.style.display = 'flex';
+    // TODO: When modal opens, load and display existing user keys
+});
+closeModalBtn.addEventListener('click', () => {
+    settingsModal.style.display = 'none';
+});
+saveKeysBtn.addEventListener('click', () => {
+    // TODO: Save the keys from the input fields to Supabase
+    showNotification('API Keys saved!'); // Placeholder
+    settingsModal.style.display = 'none';
+});
+
+// --- 4. CONVERSATION HISTORY ---
+async function saveConversation(payload, result) {
+    if (!currentUser) return; // Don't save if not logged in
+    console.log("Saving conversation...", { ...payload, output: result });
+    // TODO: Add Supabase code to insert into 'conversations' table
+}
+
+async function loadHistory() {
+    if (!currentUser) return;
+    historyList.innerHTML = '<li>Loading...</li>';
+    console.log("Loading history...");
+    // TODO: Add Supabase code to fetch from 'conversations' table
+    // For now, here's some placeholder data:
+    const mockHistory = [
+        { id: 1, input_code: 'Get-Process', created_at: new Date().toISOString() },
+        { id: 2, input_code: 'Write-Host "Hello"', created_at: new Date().toISOString() },
+    ];
+    renderHistory(mockHistory);
+}
+
+function renderHistory(items) {
+    historyList.innerHTML = '';
+    if (items.length === 0) {
+        historyList.innerHTML = '<li>No history yet.</li>';
+        return;
+    }
+    items.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item.input_code.split('\n')[0]; // Show first line
+        li.title = `Ran on ${new Date(item.created_at).toLocaleString()}`;
+        // TODO: Add click event listener to load this conversation
+        historyList.appendChild(li);
+    });
+}
+
+// --- 5. CORE APP LOGIC (API Calls, etc.) ---
 let uploadedFileName = null;
 const translationCache = new Map();
 const maxCacheSize = 50;
 
 async function callApi(payload) {
-    const cacheKey = JSON.stringify(payload);
-    if (translationCache.has(cacheKey)) {
-        return translationCache.get(cacheKey);
-    }
-
+    // This function is now just for making the call, not caching
     const response = await fetch('/.netlify/functions/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,54 +131,12 @@ async function callApi(payload) {
             errorMessage = errorData.error || JSON.stringify(errorData);
         } catch (e) {
             const textError = await response.text();
-            if (textError) {
-                errorMessage = textError;
-            }
+            if (textError) errorMessage = textError;
         }
         throw new Error(errorMessage);
     }
-
-    const data = await response.json();
-    const result = data.pythonCode; 
-    
-    translationCache.set(cacheKey, result);
-    if (translationCache.size > maxCacheSize) {
-        const firstKey = translationCache.keys().next().value;
-        translationCache.delete(firstKey);
-    }
-    return result;
+    return response.json();
 }
-
-function showNotification(message) {
-    const notification = document.getElementById('notification');
-    notification.textContent = message;
-    notification.classList.add('show');
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 3000);
-}
-
-actionSelect.addEventListener('change', () => {
-    const isTranslate = actionSelect.value === 'translate';
-    outputLangSelect.disabled = !isTranslate;
-    outputLangSelect.parentElement.style.display = isTranslate ? 'flex' : 'none';
-});
-
-uploadInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (!file) {
-        uploadedFileName = null;
-        return;
-    }
-    
-    uploadedFileName = file.name.split('.').slice(0, -1).join('.');
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        codeInput.value = e.target.result;
-    };
-    reader.readAsText(file);
-});
 
 async function handleApiCall() {
     const code = codeInput.value;
@@ -149,10 +160,17 @@ async function handleApiCall() {
     };
 
     try {
-        const result = await callApi(payload);
+        const data = await callApi(payload);
+        const result = data.pythonCode;
         pythonOutput.value = result;
         pythonOutput.style.opacity = '1';
         downloadButton.disabled = false;
+        
+        // Save to history after a successful call
+        saveConversation(payload, result);
+        // Refresh history list to show the new item
+        loadHistory();
+
     } catch (error) {
         pythonOutput.value = `Error: ${error.message}`;
         pythonOutput.style.opacity = '1';
@@ -162,16 +180,19 @@ async function handleApiCall() {
     }
 }
 
-// REMOVED: All live preview and paste logic is gone
-
+// Event Listeners (Upload, Process, Download)
 translateButton.addEventListener('click', handleApiCall);
-
+uploadInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) { uploadedFileName = null; return; }
+    uploadedFileName = file.name.split('.').slice(0, -1).join('.');
+    const reader = new FileReader();
+    reader.onload = (e) => { codeInput.value = e.target.result; };
+    reader.readAsText(file);
+});
 downloadButton.addEventListener('click', () => {
     const outputContent = pythonOutput.value;
-    if (!outputContent || outputContent.startsWith('Error:')) {
-        showNotification('No valid code to download.');
-        return;
-    }
+    if (!outputContent || outputContent.startsWith('Error:')) { showNotification('No valid code to download.'); return; }
     const blob = new Blob([outputContent], { type: 'text/plain' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -198,8 +219,7 @@ downloadButton.addEventListener('click', () => {
     URL.revokeObjectURL(link.href);
 });
 
-// REMOVED: Social button listeners
-
+// Particles.js
 if (document.getElementById('particles-js')) {
     particlesJS('particles-js', {
         particles: {

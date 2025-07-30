@@ -20,7 +20,7 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { ai_provider, action, code, inputLang, outputLang } = JSON.parse(event.body);
+        const { ai_provider, model_version, action, code, inputLang, outputLang } = JSON.parse(event.body);
 
         let userPrompt;
         // This prompt-building logic is the same for all models
@@ -54,13 +54,13 @@ exports.handler = async (event) => {
             case 'grok':
                 const grokCompletion = await xai.chat.completions.create({
                     messages: [{ role: "user", content: fullPrompt }],
-                    model: "grok-3", 
+                    model: model_version, // Use dynamic model
                 });
                 resultText = grokCompletion.choices[0].message.content;
                 break;
 
             case 'gemini':
-                const geminiModel = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+                const geminiModel = genAI.getGenerativeModel({ model: model_version }); // Use dynamic model
                 const geminiResult = await geminiModel.generateContent(fullPrompt);
                 const geminiResponse = await geminiResult.response;
                 resultText = geminiResponse.text();
@@ -68,18 +68,15 @@ exports.handler = async (event) => {
 
             case 'chatgpt':
                 const openaiCompletion = await openai.chat.completions.create({
-                    messages: [
-                        { role: "system", content: systemPrompt },
-                        { role: "user", content: fullPrompt }
-                    ],
-                    model: "gpt-4o", 
+                    messages: [{ role: "system", content: systemPrompt }, { role: "user", content: fullPrompt }],
+                    model: model_version, // Use dynamic model
                 });
                 resultText = openaiCompletion.choices[0].message.content;
                 break;
             
             case 'claude':
                 const claudeCompletion = await anthropic.messages.create({
-                    model: "claude-sonnet-4-20250514",
+                    model: model_version, // Use dynamic model
                     max_tokens: 4096,
                     system: systemPrompt,
                     messages: [{ role: "user", content: fullPrompt }],
@@ -91,7 +88,6 @@ exports.handler = async (event) => {
                 return { statusCode: 400, body: JSON.stringify({ error: "Invalid AI provider specified." }) };
         }
 
-        // Return the final result to the frontend
         return {
             statusCode: 200,
             body: JSON.stringify({ pythonCode: resultText }) 
