@@ -16,123 +16,82 @@ const inputLangSelect = document.getElementById('input-lang');
 const outputLangSelect = document.getElementById('output-lang');
 const aiProviderSelect = document.getElementById('ai-provider-select');
 const authButton = document.getElementById('auth-btn');
-// NEW: Settings modal elements
 const settingsBtn = document.getElementById('settings-btn');
 const settingsModal = document.getElementById('settings-modal');
 const closeModalBtn = document.getElementById('close-modal-btn');
 const saveKeysBtn = document.getElementById('save-keys-btn');
-// NEW: History list
 const historyList = document.getElementById('history-list');
+const modelVersionSelect = document.getElementById('model-version-select');
 
-// --- 2. AUTHENTICATION LOGIC ---
-let currentUser = null;
+// --- Model Definitions ---
+const modelsByProvider = {
+    claude: [
+        { id: 'claude-sonnet-4-20250514', name: 'Sonnet 4' },
+        { id: 'claude-3-opus-20240229', name: 'Opus 3' },
+        { id: 'claude-3.5-sonnet-20240620', name: 'Sonnet 3.5' },
+    ],
+    chatgpt: [
+        { id: 'chatgpt-4o-latest', name: 'GPT-4o-latest' },
+        { id: 'o4-mini-2025-04-16', name: 'GPT-o4-mini' },
+        { id: 'gpt-4.1-2025-04-14', name: 'GPT-4.1' },
+    ],
+    gemini: [
+        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
+        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+        { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite' },
+        
+    ],
+    grok: [
+        { id: 'grok-4-0709', name: 'Grok 4' },
+        { id: 'grok-3-latest', name: 'Grok 3-Latest' },
+        { id: 'grok-3-mini', name: 'Grok 3 Mini' },
 
-async function signInWithGithub() {
-    const { error } = await _supabase.auth.signInWithOAuth({ provider: 'github' });
-    if (error) showNotification(`Error: ${error.message}`);
-}
+    ]
+};
 
-async function signOut() {
-    const { error } = await _supabase.auth.signOut();
-    if (error) showNotification(`Error: ${error.message}`);
-}
+// --- Function to populate model dropdown ---
+function populateModels() {
+    const provider = aiProviderSelect.value;
+    const models = modelsByProvider[provider] || [];
+    modelVersionSelect.innerHTML = ''; // Clear existing options
 
-function updateAuthUI(user) {
-    currentUser = user;
-    if (user) {
-        authButton.textContent = 'Logout';
-        authButton.onclick = signOut;
-        settingsBtn.style.display = 'block'; // Show settings when logged in
-        loadHistory(); // Load user's history
-    } else {
-        authButton.textContent = 'Login with GitHub';
-        authButton.onclick = signInWithGithub;
-        settingsBtn.style.display = 'none'; // Hide settings when logged out
-        historyList.innerHTML = '<li>Login to see your history.</li>';
-    }
-}
-
-_supabase.auth.onAuthStateChange((event, session) => {
-    updateAuthUI(session?.user);
-});
-
-async function checkInitialSession() {
-    const { data: { session } } = await _supabase.auth.getSession();
-    updateAuthUI(session?.user);
-}
-checkInitialSession();
-
-// --- 3. SETTINGS MODAL & API KEYS ---
-settingsBtn.addEventListener('click', () => {
-    settingsModal.style.display = 'flex';
-    // TODO: When modal opens, load and display existing user keys
-});
-closeModalBtn.addEventListener('click', () => {
-    settingsModal.style.display = 'none';
-});
-saveKeysBtn.addEventListener('click', () => {
-    // TODO: Save the keys from the input fields to Supabase
-    showNotification('API Keys saved!'); // Placeholder
-    settingsModal.style.display = 'none';
-});
-
-// --- 4. CONVERSATION HISTORY ---
-async function saveConversation(payload, result) {
-    if (!currentUser) return; // Don't save if not logged in
-    console.log("Saving conversation...", { ...payload, output: result });
-    // TODO: Add Supabase code to insert into 'conversations' table
-}
-
-async function loadHistory() {
-    if (!currentUser) return;
-    historyList.innerHTML = '<li>Loading...</li>';
-    console.log("Loading history...");
-    // TODO: Add Supabase code to fetch from 'conversations' table
-    // For now, here's some placeholder data:
-    const mockHistory = [
-        { id: 1, input_code: 'Get-Process', created_at: new Date().toISOString() },
-        { id: 2, input_code: 'Write-Host "Hello"', created_at: new Date().toISOString() },
-    ];
-    renderHistory(mockHistory);
-}
-
-function renderHistory(items) {
-    historyList.innerHTML = '';
-    if (items.length === 0) {
-        historyList.innerHTML = '<li>No history yet.</li>';
-        return;
-    }
-    items.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item.input_code.split('\n')[0]; // Show first line
-        li.title = `Ran on ${new Date(item.created_at).toLocaleString()}`;
-        // TODO: Add click event listener to load this conversation
-        historyList.appendChild(li);
+    models.forEach(model => {
+        const option = document.createElement('option');
+        option.value = model.id;
+        option.textContent = model.name;
+        modelVersionSelect.appendChild(option);
     });
 }
 
+// --- 2. AUTHENTICATION LOGIC ---
+let currentUser = null;
+async function signInWithGithub() { const { error } = await _supabase.auth.signInWithOAuth({ provider: 'github' }); if (error) showNotification(`Error: ${error.message}`); }
+async function signOut() { const { error } = await _supabase.auth.signOut(); if (error) showNotification(`Error: ${error.message}`); }
+function updateAuthUI(user) { currentUser = user; if (user) { authButton.textContent = 'Logout'; authButton.onclick = signOut; settingsBtn.style.display = 'block'; loadHistory(); } else { authButton.textContent = 'Login with GitHub'; authButton.onclick = signInWithGithub; settingsBtn.style.display = 'none'; historyList.innerHTML = '<li>Login to see your history.</li>'; } }
+_supabase.auth.onAuthStateChange((event, session) => { updateAuthUI(session?.user); });
+async function checkInitialSession() { const { data: { session } } = await _supabase.auth.getSession(); updateAuthUI(session?.user); }
+
+// --- 3. SETTINGS MODAL & API KEYS ---
+settingsBtn.addEventListener('click', () => { settingsModal.style.display = 'flex'; });
+closeModalBtn.addEventListener('click', () => { settingsModal.style.display = 'none'; });
+saveKeysBtn.addEventListener('click', () => { showNotification('API Keys saved!'); settingsModal.style.display = 'none'; });
+
+// --- 4. CONVERSATION HISTORY ---
+async function saveConversation(payload, result) { if (!currentUser) return; console.log("Saving conversation...", { ...payload, output: result }); }
+async function loadHistory() { if (!currentUser) return; historyList.innerHTML = '<li>Loading...</li>'; console.log("Loading history..."); const mockHistory = [ { id: 1, input_code: 'Get-Process', created_at: new Date().toISOString() }, { id: 2, input_code: 'Write-Host "Hello"', created_at: new Date().toISOString() }, ]; renderHistory(mockHistory); }
+function renderHistory(items) { historyList.innerHTML = ''; if (items.length === 0) { historyList.innerHTML = '<li>No history yet.</li>'; return; } items.forEach(item => { const li = document.createElement('li'); li.textContent = item.input_code.split('\n')[0]; li.title = `Ran on ${new Date(item.created_at).toLocaleString()}`; historyList.appendChild(li); }); }
+
 // --- 5. CORE APP LOGIC (API Calls, etc.) ---
 let uploadedFileName = null;
-const translationCache = new Map();
-const maxCacheSize = 50;
-
 async function callApi(payload) {
-    // This function is now just for making the call, not caching
     const response = await fetch('/.netlify/functions/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-
     if (!response.ok) {
         let errorMessage = `API Error: Server responded with status ${response.status}`;
-        try {
-            const errorData = await response.json();
-            errorMessage = errorData.error || JSON.stringify(errorData);
-        } catch (e) {
-            const textError = await response.text();
-            if (textError) errorMessage = textError;
-        }
+        try { const errorData = await response.json(); errorMessage = errorData.error || JSON.stringify(errorData); } catch (e) { const textError = await response.text(); if (textError) errorMessage = textError; }
         throw new Error(errorMessage);
     }
     return response.json();
@@ -153,6 +112,7 @@ async function handleApiCall() {
 
     const payload = {
         ai_provider: aiProviderSelect.value,
+        model_version: modelVersionSelect.value,
         action: actionSelect.value,
         code: code,
         inputLang: inputLangSelect.value,
@@ -165,12 +125,8 @@ async function handleApiCall() {
         pythonOutput.value = result;
         pythonOutput.style.opacity = '1';
         downloadButton.disabled = false;
-        
-        // Save to history after a successful call
         saveConversation(payload, result);
-        // Refresh history list to show the new item
         loadHistory();
-
     } catch (error) {
         pythonOutput.value = `Error: ${error.message}`;
         pythonOutput.style.opacity = '1';
@@ -180,44 +136,17 @@ async function handleApiCall() {
     }
 }
 
-// Event Listeners (Upload, Process, Download)
+// --- EVENT LISTENERS ---
+aiProviderSelect.addEventListener('change', populateModels);
 translateButton.addEventListener('click', handleApiCall);
-uploadInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
-    if (!file) { uploadedFileName = null; return; }
-    uploadedFileName = file.name.split('.').slice(0, -1).join('.');
-    const reader = new FileReader();
-    reader.onload = (e) => { codeInput.value = e.target.result; };
-    reader.readAsText(file);
-});
-downloadButton.addEventListener('click', () => {
-    const outputContent = pythonOutput.value;
-    if (!outputContent || outputContent.startsWith('Error:')) { showNotification('No valid code to download.'); return; }
-    const blob = new Blob([outputContent], { type: 'text/plain' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    const action = actionSelect.value;
-    let filename;
-    const lang = outputLangSelect.options[outputLangSelect.selectedIndex].text.toLowerCase();
-    const extensionMap = { 'python': 'py', 'javascript': 'js', 'powershell': 'ps1', 'c#': 'cs', 'go': 'go' };
-    const extension = extensionMap[lang] || 'txt';
-    if ((action === 'translate' || action === 'add_comments' || action === 'debug') && uploadedFileName) {
-        filename = `${uploadedFileName}.${extension}`;
-    } else {
-        switch(action) {
-            case 'translate': filename = `translated_script.${extension}`; break;
-            case 'explain': filename = 'explanation.txt'; break;
-            case 'debug': filename = `debugged_script.${extension}`; break;
-            case 'add_comments': filename = `commented_script.${extension}`; break;
-            default: filename = 'result.txt';
-        }
-    }
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
-});
+uploadInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (!file) { uploadedFileName = null; return; } uploadedFileName = file.name.split('.').slice(0, -1).join('.'); const reader = new FileReader(); reader.onload = (e) => { codeInput.value = e.target.result; }; reader.readAsText(file); });
+downloadButton.addEventListener('click', () => { const outputContent = pythonOutput.value; if (!outputContent || outputContent.startsWith('Error:')) { showNotification('No valid code to download.'); return; } const blob = new Blob([outputContent], { type: 'text/plain' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); const action = actionSelect.value; let filename; const lang = outputLangSelect.options[outputLangSelect.selectedIndex].text.toLowerCase(); const extensionMap = { 'python': 'py', 'javascript': 'js', 'powershell': 'ps1', 'c#': 'cs', 'go': 'go' }; const extension = extensionMap[lang] || 'txt'; if ((action === 'translate' || action === 'add_comments' || action === 'debug') && uploadedFileName) { filename = `${uploadedFileName}.${extension}`; } else { switch(action) { case 'translate': filename = `translated_script.${extension}`; break; case 'explain': filename = 'explanation.txt'; break; case 'debug': filename = `debugged_script.${extension}`; break; case 'add_comments': filename = `commented_script.${extension}`; break; default: filename = 'result.txt'; } } link.download = filename; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(link.href); });
+
+// --- INITIALIZATION ---
+// This runs once the script is loaded. Since the script is at the end of the HTML,
+// all the elements are guaranteed to be ready.
+checkInitialSession();
+populateModels();
 
 // Particles.js
 if (document.getElementById('particles-js')) {
