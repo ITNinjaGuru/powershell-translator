@@ -159,7 +159,34 @@ function renderHistory(items) {
 }
 
 // --- 5. CORE APP LOGIC ---
-async function callApi(payload) { const response = await fetch('/.netlify/functions/translate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); if (!response.ok) { let errorMessage = `API Error: Server responded with status ${response.status}`; try { const errorData = await response.json(); errorMessage = errorData.error || JSON.stringify(errorData); } catch (e) { const textError = await response.text(); if (textError) errorMessage = textError; } throw new Error(errorMessage); } return response.json(); }
+// UPDATED: More robust error handling in callApi
+async function callApi(payload) {
+    const response = await fetch('/.netlify/functions/translate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        // Read the response body as text ONCE.
+        const errorText = await response.text();
+        let errorMessage = `API Error: ${response.status} ${response.statusText}`;
+        try {
+            // Try to parse the text as JSON to get a more specific error.
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error || JSON.stringify(errorData);
+        } catch (e) {
+            // If it's not JSON (like an HTML error page), use the raw text.
+            if (errorText) {
+                errorMessage = errorText;
+            }
+        }
+        throw new Error(errorMessage);
+    }
+    // If the response is OK, we know it's safe to parse as JSON.
+    return response.json();
+}
+
 async function handleApiCall() {
     if (!currentUser) { showNotification('Please log in to use the app.'); return; }
     const providerKeyMap = { chatgpt: 'openai_key', gemini: 'gemini_key', claude: 'claude_key' };
@@ -192,38 +219,26 @@ async function handleApiCall() {
 aiProviderSelect.addEventListener('change', populateModels);
 translateButton.addEventListener('click', handleApiCall);
 uploadInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (!file) { uploadedFileName = null; return; } uploadedFileName = file.name.split('.').slice(0, -1).join('.'); const reader = new FileReader(); reader.onload = (e) => { codeInput.value = e.target.result; }; reader.readAsText(file); });
-
-// --- UPDATED: Download Button Logic ---
 downloadButton.addEventListener('click', () => {
     const outputContent = pythonOutput.value;
-    if (!outputContent || outputContent.startsWith('Error:')) {
-        showNotification('No valid code to download.');
-        return;
-    }
+    if (!outputContent || outputContent.startsWith('Error:')) { showNotification('No valid code to download.'); return; }
     const blob = new Blob([outputContent], { type: 'text/plain' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     const action = actionSelect.value;
     let filename;
-    
-    // For optimize, the output language is the same as the input
     const langKey = (action === 'optimize') ? inputLangSelect.value : outputLangSelect.value;
     const lang = langKey.toLowerCase();
-    
     const extensionMap = { 'python': 'py', 'javascript': 'js', 'powershell': 'ps1', 'c#': 'cs', 'go': 'go', 'azure cli': 'azcli', 'bicep': 'bicep' };
     const extension = extensionMap[lang] || 'txt';
-
-    // Check if a file was uploaded and the action produces code
     const isCodeAction = ['translate', 'add_comments', 'debug', 'optimize'].includes(action);
     if (isCodeAction && uploadedFileName) {
-        // Use the original filename with a suffix for the action
         const suffix = (action === 'translate') ? '' : `_${action}`;
         filename = `${uploadedFileName}${suffix}.${extension}`;
     } else {
-        // Fallback to generic names
         switch(action) {
             case 'translate': filename = `translated_script.${extension}`; break;
-            case 'optimize': filename = `optimized_script.${extension}`; break; // New case
+            case 'optimize': filename = `optimized_script.${extension}`; break;
             case 'explain': filename = 'explanation.txt'; break;
             case 'debug': filename = `debugged_script.${extension}`; break;
             case 'add_comments': filename = `commented_script.${extension}`; break;
