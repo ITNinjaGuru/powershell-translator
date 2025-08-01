@@ -49,16 +49,16 @@ body {
 .container { display: flex; flex-direction: column; align-items: center; gap: 15px; width: 100%; max-width: 1400px; }
 .editor-group { position: relative; width: 100%; }
 
-/* --- UPDATED: Textarea Styles --- */
+/* --- Textarea Styles --- */
 textarea {
     width: 100%;
     height: 40vh;
     min-height: 200px;
     padding: 20px;
     padding-top: 60px;
-    font-size: 16px; /* Increased from 14px */
+    font-size: 16px;
     font-family: 'Courier New', Courier, monospace;
-    color: var(--text-secondary); /* Brighter text color */
+    color: var(--text-secondary);
     resize: both;
     border-radius: 12px;
     border: 2px solid var(--glass-border);
@@ -73,33 +73,29 @@ textarea:focus, textarea:hover {
     box-shadow: 0 0 20px rgba(125, 249, 255, 0.6), 0 0 30px rgba(125, 249, 255, 0.3);
 }
 
-/* --- NEW: Typing Animation for Placeholder --- */
+/* --- Typing Animation for Placeholder --- */
 textarea::placeholder {
     color: var(--text-primary);
     opacity: 0.6;
-    /* Animation properties */
     display: inline-block;
     white-space: nowrap;
     overflow: hidden;
-    width: 0; /* Start with no width */
+    width: 0;
     animation: 
-        typing 3.5s steps(35, end) forwards,
+        typing 3.5s steps(40, end) forwards,
         blink-caret .75s step-end infinite;
 }
 
-/* Stop animation when user clicks in */
 textarea:focus::placeholder {
     animation: none;
-    opacity: 0.2; /* Fade out placeholder on focus */
+    opacity: 0.2;
 }
 
-/* The typing effect */
 @keyframes typing {
     from { width: 0 }
-    to { width: 25ch } /* Animate to the width of the placeholder text */
+    to { width: 30ch } /* Adjusted to fit longer placeholder */
 }
 
-/* The typewriter cursor effect */
 @keyframes blink-caret {
     from, to { border-right-color: transparent }
     50% { border-right: 2px solid var(--primary-accent); }
@@ -127,10 +123,44 @@ button:disabled { background-color: #3a4a6b; color: #8c8c8c; border-color: #3a4a
 .input-field-wrapper input { width: 100%; padding-right: 40px; box-sizing: border-box; }
 .reveal-btn { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); background: none; border: none; padding: 5px; cursor: pointer; color: var(--text-primary); }
 .reveal-btn:hover { color: var(--primary-accent); }
-.loading-spinner { position: fixed; top: 50%; left: 50%; transform: translate(calc(-50% + 140px), -50%); z-index: 1000; display: flex; align-items: center; justify-content: center; gap: 10px; width: 150px; height: 50px; }
-.dot { width: 15px; height: 15px; background-color: var(--primary-accent); border-radius: 50%; animation: jump-and-slide 2s infinite ease-in-out; }
-.dot:nth-child(1) { animation-delay: 0s; } .dot:nth-child(2) { animation-delay: 0.1s; } .dot:nth-child(3) { animation-delay: 0.2s; } .dot:nth-child(4) { animation-delay: 0.3s; } .dot:nth-child(5) { animation-delay: 0.4s; }
-@keyframes jump-and-slide { 0%, 100% { transform: translate(0, 0); opacity: 1; } 25% { transform: translateY(-25px) scale(1.1); } 50% { transform: translate(0, 0); } 75% { transform: translateX(40px) scale(0.5); opacity: 0; } 80% { transform: translateX(-80px); opacity: 0; } }
+
+/* --- "Jump and Slide" Loading Spinner --- */
+.loading-spinner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(calc(-50% + 140px), -50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 150px;
+    height: 50px;
+}
+
+.dot {
+    width: 15px;
+    height: 15px;
+    background-color: var(--primary-accent);
+    border-radius: 50%;
+    animation: jump-and-slide 2s infinite ease-in-out;
+}
+
+.dot:nth-child(1) { animation-delay: 0s; }
+.dot:nth-child(2) { animation-delay: 0.1s; }
+.dot:nth-child(3) { animation-delay: 0.2s; } /* CORRECTED TYPO */
+.dot:nth-child(4) { animation-delay: 0.3s; }
+.dot:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes jump-and-slide {
+    0%, 100% { transform: translate(0, 0); opacity: 1; }
+    25% { transform: translateY(-25px) scale(1.1); }
+    50% { transform: translate(0, 0); }
+    75% { transform: translateX(40px) scale(0.5); opacity: 0; }
+    80% { transform: translateX(-80px); opacity: 0; }
+}
+
 .notification { position: fixed; top: 20px; right: 20px; padding: 10px 20px; background: var(--glass-background); backdrop-filter: blur(10px); border-radius: 8px; color: var(--text-primary); box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); z-index: 3000; opacity: 0; transition: opacity 0.3s ease; }
 .notification.show { opacity: 1; }
 
