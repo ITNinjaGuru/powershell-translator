@@ -19,21 +19,24 @@ exports.handler = async (event) => {
         let userPrompt;
         // This prompt-building logic is the same for all models
         switch (action) {
+            case 'create':
+                userPrompt = `Generate a new ${outputLang} script based on the following description. The script MUST be complete, functional, and ready to run. Your response MUST contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.`;
+                break;
             case 'translate':
-                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text. If comment or remark is added, it must be commented out so it does not affect the code.`;
+                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text. If comment or remark is added, it MUST be commented out so it does not affect the code.`;
                 break;
             // NEW: Case for the optimize action
             case 'optimize':
-                userPrompt = `Analyze the following ${inputLang} code and suggest optimizations for performance, efficiency, security and best practices. Do not include markdown delimiters like \`\`\`python or \`\`\`. Provide the optimized code in a single code block, and then below it, a commented out explain the changes you made. I emphasize the commenting out of these notes.`;
+                userPrompt = `Analyze the following ${inputLang} code and suggest optimizations for performance, efficiency, security and best practices. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.  Provide the optimized code in a single code block, and then below it, a commented out explanation of the changes you made. The notes MUST be commented out.`;
                 break;
             case 'explain':
-                userPrompt = `Explain the following ${inputLang} code in simple, clear terms. Use markdown for formatting. Provide a step-by-step breakdown of what it does. Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments should be commented out so they do not affect the code.`;
+                userPrompt = `Explain the following ${inputLang} code in simple, clear terms. Provide a step-by-step breakdown of what it does. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not include any introductory comments.  The comments should be commented out so they do not affect the code.`;
                 break;
             case 'debug':
-                userPrompt = `Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single code block, and then below it, explain what you changed and why in a commented out section.  Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments should be commented out so they do not affect the code.`;
+                userPrompt = `Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single code block, and then below it, explain what you changed and why in a commented out section.  Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments MUST be commented out so they do not affect the code.  Do not include any introductory text.`;
                 break;
             case 'add_comments':
-                userPrompt = `Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single code block. Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments should be commented out so they do not affect the code.`;
+                userPrompt = `Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single code block. Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments MUST be commented out so they do not affect the code.  Do not include any introductory comments.`;
                 break;
             default:
                 return { statusCode: 400, body: JSON.stringify({ error: "Invalid action specified." }) };
@@ -41,7 +44,7 @@ exports.handler = async (event) => {
         
         const fullPrompt = `${userPrompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
         let resultText;
-        const systemPrompt = "You are an expert programming assistant and cloud engineer.";
+        const systemPrompt = "You are senior software engineer expert who is the worlds leading code developer and expert programming assistant.";
 
         switch (ai_provider) {
             case 'gemini':
