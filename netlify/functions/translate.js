@@ -1,4 +1,4 @@
-// Import all necessary client libraries
+// Import AI SDKs
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const OpenAI = require("openai");
 const Anthropic = require('@anthropic-ai/sdk');
@@ -14,57 +14,64 @@ exports.handler = async (event) => {
         if (!user_api_key) {
             return { statusCode: 400, body: JSON.stringify({ error: "API key is missing." }) };
         }
+        if (!model_version) {
+            return { statusCode: 400, body: JSON.stringify({ error: "Model version is missing." }) };
+        }
 
+        // Truncate overly large code/description to avoid token errors
+        const safeCode = code.length > 8000 ? code.substring(0, 8000) + "\n// ... truncated ..." : code;
 
         let userPrompt;
-        // This prompt-building logic is the same for all models
         switch (action) {
             case 'create':
-                userPrompt = `Generate a new ${outputLang} script based on the following description. The script MUST be complete, functional, and ready to run. Your response MUST contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.`;
+                userPrompt = `Generate a new ${outputLang} script based on the following description. The script MUST be complete, functional, and ready to run. Your response MUST contain ONLY the raw code itself. Do not add any explanation, notes, or markdown delimiters.`;
                 break;
             case 'translate':
-                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text. If comment or remark is added, it MUST be commented out so it does not affect the code.`;
+                userPrompt = `Translate the following ${inputLang} code to ${outputLang}. Your response must contain ONLY the raw code itself. If you add any remarks, they MUST be commented out.`;
                 break;
-            // NEW: Case for the optimize action
             case 'optimize':
-                userPrompt = `Analyze the following ${inputLang} code and suggest optimizations for performance, efficiency, security and best practices. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not add any explanation, notes, or introductory text.  Provide the optimized code in a single code block, and then below it, a commented out explanation of the changes you made. The notes MUST be commented out.`;
+                userPrompt = `Analyze the following ${inputLang} code and suggest optimizations for performance, efficiency, security, and best practices. Provide the optimized code, then below it, a commented-out explanation of the changes.`;
                 break;
             case 'explain':
-                userPrompt = `Explain the following ${inputLang} code in simple, clear terms. Provide a step-by-step breakdown of what it does. Do not include markdown delimiters like \`\`\`python or \`\`\`. Do not include any introductory comments.  The comments should be commented out so they do not affect the code.`;
+                userPrompt = `Explain the following ${inputLang} code step-by-step. All explanations MUST be commented out in the output.`;
                 break;
             case 'debug':
-                userPrompt = `Find and fix any bugs in the following ${inputLang} code. Provide the corrected code in a single code block, and then below it, explain what you changed and why in a commented out section.  Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments MUST be commented out so they do not affect the code.  Do not include any introductory text.`;
+                userPrompt = `Find and fix any bugs in the following ${inputLang} code. Provide the corrected code, then below it, a commented-out explanation of changes.`;
                 break;
             case 'add_comments':
-                userPrompt = `Add detailed, line-by-line comments to the following ${inputLang} code. Return the full, commented code in a single code block. Do not include markdown delimiters like \`\`\`python or \`\`\`. The comments MUST be commented out so they do not affect the code.  Do not include any introductory comments.`;
+                userPrompt = `Add detailed, line-by-line comments to the following ${inputLang} code. All comments MUST be commented out in the output.`;
                 break;
             default:
                 return { statusCode: 400, body: JSON.stringify({ error: "Invalid action specified." }) };
         }
-        
-        const fullPrompt = `${userPrompt}\n\n\`\`\`${inputLang}\n${code}\n\`\`\``;
-        let resultText;
-        const systemPrompt = "You are senior software engineer expert who is the worlds leading code developer and expert programming assistant.";
 
+        // Build the final prompt without triple backticks
+        const fullPrompt = `${userPrompt}\n\n${safeCode}`;
+        const systemPrompt = "You are a senior software engineer and world-class expert programming assistant.";
+
+        let resultText;
         switch (ai_provider) {
-            case 'gemini':
+            case 'gemini': {
                 const genAI = new GoogleGenerativeAI(user_api_key);
                 const geminiModel = genAI.getGenerativeModel({ model: model_version });
                 const geminiResult = await geminiModel.generateContent(fullPrompt);
                 const geminiResponse = await geminiResult.response;
                 resultText = geminiResponse.text();
                 break;
-
-            case 'chatgpt':
+            }
+            case 'chatgpt': {
                 const openai = new OpenAI({ apiKey: user_api_key });
-                const openaiCompletion = await openai.chat.completions.create({
-                    messages: [{ role: "system", content: systemPrompt }, { role: "user", content: fullPrompt }],
-                    model: model_version, 
+                const completion = await openai.chat.completions.create({
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: fullPrompt }
+                    ],
+                    model: model_version
                 });
-                resultText = openaiCompletion.choices[0].message.content;
+                resultText = completion.choices[0].message.content;
                 break;
-            
-            case 'claude':
+            }
+            case 'claude': {
                 const anthropic = new Anthropic({ apiKey: user_api_key });
                 const claudeCompletion = await anthropic.messages.create({
                     model: model_version,
@@ -74,14 +81,14 @@ exports.handler = async (event) => {
                 });
                 resultText = claudeCompletion.content[0].text;
                 break;
-
+            }
             default:
                 return { statusCode: 400, body: JSON.stringify({ error: "Invalid AI provider specified." }) };
         }
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ pythonCode: resultText }) 
+            body: JSON.stringify({ pythonCode: resultText })
         };
 
     } catch (error) {

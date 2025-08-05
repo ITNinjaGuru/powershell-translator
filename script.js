@@ -1,10 +1,15 @@
 // --- 1. SUPABASE SETUP ---
-const SUPABASE_URL = 'https://dlsbcrwkmjzhdwyzsola.supabase.co'; 
+const SUPABASE_URL = 'https://dlsbcrwkmjzhdwyzsola.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRsc2JjcndrbWp6aGR3eXpzb2xhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM4MzAxNTQsImV4cCI6MjA2OTQwNjE1NH0.VqsHrjA3-FHNCoiDmRDiOFZwnblrl-AZrEAtC6vRUHY';
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// --- Get references to all interactive DOM elements ---
+// --- State Vars ---
+let currentUser = null;
+let userApiKeys = {};
+let uploadedFileName = null;
+
+// --- DOM Elements ---
 const translateButton = document.getElementById('translate-btn');
 const codeInput = document.getElementById('code-input');
 const pythonOutput = document.getElementById('py-output');
@@ -36,13 +41,11 @@ const modelsByProvider = {
         { id: 'o4-mini-2025-04-16', name: 'GPT-o4-mini' },
         { id: 'gpt-4.1-2025-04-14', name: 'GPT-4.1' },
         { id: 'o3-2025-04-16', name: 'GPT-o3' },
-
     ],
     gemini: [
         { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
         { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
         { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash-Lite' },
-        
     ]
 };
 
@@ -58,13 +61,15 @@ function populateModels() {
     });
 }
 
-// --- 2. AUTHENTICATION LOGIC ---
-let currentUser = null;
-let userApiKeys = {};
-
-async function signInWithGithub() { const { error } = await _supabase.auth.signInWithOAuth({ provider: 'github' }); if (error) showNotification(`Error: ${error.message}`); }
-async function signOut() { const { error } = await _supabase.auth.signOut(); if (error) showNotification(`Error: ${error.message}`); }
-
+// --- 2. AUTH ---
+async function signInWithGithub() {
+    const { error } = await _supabase.auth.signInWithOAuth({ provider: 'github' });
+    if (error) showNotification(`Error: ${error.message}`);
+}
+async function signOut() {
+    const { error } = await _supabase.auth.signOut();
+    if (error) showNotification(`Error: ${error.message}`);
+}
 async function updateAuthUI(user) {
     currentUser = user;
     if (user) {
@@ -81,18 +86,22 @@ async function updateAuthUI(user) {
         userApiKeys = {};
     }
 }
-
 _supabase.auth.onAuthStateChange((event, session) => { updateAuthUI(session?.user); });
-async function checkInitialSession() { const { data: { session } } = await _supabase.auth.getSession(); updateAuthUI(session?.user); }
-
-// --- 3. SETTINGS MODAL & API KEYS ---
-async function loadUserApiKeys() {
-    if (!currentUser) return;
-    const { data, error } = await _supabase.from('user_api_keys').select('*').single();
-    if (data) userApiKeys = data;
-    else userApiKeys = {};
+async function checkInitialSession() {
+    const { data: { session } } = await _supabase.auth.getSession();
+    updateAuthUI(session?.user);
 }
 
+// --- 3. SETTINGS MODAL ---
+async function loadUserApiKeys() {
+    if (!currentUser) return;
+    const { data, error } = await _supabase
+        .from('user_api_keys')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
+    userApiKeys = data || {};
+}
 settingsBtn.addEventListener('click', async () => {
     await loadUserApiKeys();
     document.getElementById('openai-key').value = userApiKeys.openai_key || '';
@@ -100,19 +109,15 @@ settingsBtn.addEventListener('click', async () => {
     document.getElementById('claude-key').value = userApiKeys.claude_key || '';
     settingsModal.style.display = 'flex';
 });
-
 closeModalBtn.addEventListener('click', () => { settingsModal.style.display = 'none'; });
-
 saveKeysBtn.addEventListener('click', async () => {
     if (!currentUser) return showNotification('You must be logged in to save keys.');
-    
     const keysToSave = {
         id: currentUser.id,
         openai_key: document.getElementById('openai-key').value.trim(),
         gemini_key: document.getElementById('gemini-key').value.trim(),
         claude_key: document.getElementById('claude-key').value.trim(),
     };
-
     try {
         saveKeysBtn.disabled = true;
         saveKeysBtn.textContent = 'Saving...';
@@ -123,16 +128,37 @@ saveKeysBtn.addEventListener('click', async () => {
         settingsModal.style.display = 'none';
     } catch (error) {
         showNotification(`Error saving keys: ${error.message}`);
-        console.error("Error saving keys:", error);
     } finally {
         saveKeysBtn.disabled = false;
         saveKeysBtn.textContent = 'Save Keys';
     }
 });
 
-// --- 4. CONVERSATION HISTORY ---
-async function saveConversation(payload, result) { if (!currentUser) return; const { error } = await _supabase.from('conversations').insert({ user_id: currentUser.id, payload: payload, result: result }); if (error) console.error("Error saving history:", error); }
-async function loadHistory() { if (!currentUser) return; historyList.innerHTML = '<li>Loading...</li>'; const { data, error } = await _supabase.from('conversations').select('*').order('created_at', { ascending: false }).limit(20); if (error) { historyList.innerHTML = '<li>Error loading history.</li>'; } else { renderHistory(data); } }
+// --- 4. HISTORY ---
+async function saveConversation(payload, result) {
+    if (!currentUser) return;
+    const { error } = await _supabase.from('conversations').insert({
+        user_id: currentUser.id,
+        payload,
+        result
+    });
+    if (error) console.error("Error saving history:", error);
+}
+async function loadHistory() {
+    if (!currentUser) return;
+    historyList.innerHTML = '<li>Loading...</li>';
+    const { data, error } = await _supabase
+        .from('conversations')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .order('created_at', { ascending: false })
+        .limit(20);
+    if (error) {
+        historyList.innerHTML = '<li>Error loading history.</li>';
+    } else {
+        renderHistory(data);
+    }
+}
 function renderHistory(items) {
     historyList.innerHTML = '';
     if (!items || items.length === 0) {
@@ -158,46 +184,56 @@ function renderHistory(items) {
     });
 }
 
-// --- 5. CORE APP LOGIC ---
-// UPDATED: More robust error handling in callApi
+// --- 5. API CALL ---
 async function callApi(payload) {
     const response = await fetch('/.netlify/functions/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
     });
-
     if (!response.ok) {
-        // Read the response body as text ONCE.
         const errorText = await response.text();
-        let errorMessage = `API Error: ${response.status} ${response.statusText}`;
         try {
-            // Try to parse the text as JSON to get a more specific error.
             const errorData = JSON.parse(errorText);
-            errorMessage = errorData.error || JSON.stringify(errorData);
-        } catch (e) {
-            // If it's not JSON (like an HTML error page), use the raw text.
-            if (errorText) {
-                errorMessage = errorText;
-            }
+            throw new Error(errorData.error || JSON.stringify(errorData));
+        } catch {
+            throw new Error(errorText);
         }
-        throw new Error(errorMessage);
     }
-    // If the response is OK, we know it's safe to parse as JSON.
     return response.json();
 }
-
 async function handleApiCall() {
-    if (!currentUser) { showNotification('Please log in to use the app.'); return; }
+    if (!currentUser) return showNotification('Please log in to use the app.');
     const providerKeyMap = { chatgpt: 'openai_key', gemini: 'gemini_key', claude: 'claude_key' };
     const provider = aiProviderSelect.value;
     const requiredKey = providerKeyMap[provider];
     const userApiKey = userApiKeys[requiredKey];
-    if (!userApiKey) { showNotification(`Please add your ${provider} API key in settings.`); settingsModal.style.display = 'flex'; return; }
+    if (!userApiKey) {
+        showNotification(`Please add your ${provider} API key in settings.`);
+        settingsModal.style.display = 'flex';
+        return;
+    }
     const code = codeInput.value;
-    if (!code.trim()) { showNotification('Please enter some code.'); return; }
-    loadingSpinner.style.display = 'flex'; pythonOutput.style.opacity = '0'; pythonOutput.value = ''; translateButton.disabled = true; downloadButton.disabled = true;
-    const payload = { user_api_key: userApiKey, ai_provider: provider, model_version: modelVersionSelect.value, action: actionSelect.value, code: code, inputLang: inputLangSelect.value, outputLang: outputLangSelect.value };
+    if (!code.trim()) {
+        showNotification(actionSelect.value === 'create'
+            ? 'Please enter a description for your new code.'
+            : 'Please enter some code.');
+        return;
+    }
+    loadingSpinner.style.display = 'flex';
+    pythonOutput.style.opacity = '0';
+    pythonOutput.value = '';
+    translateButton.disabled = true;
+    downloadButton.disabled = true;
+    const payload = {
+        user_api_key: userApiKey,
+        ai_provider: provider,
+        model_version: modelVersionSelect.value,
+        action: actionSelect.value,
+        code,
+        inputLang: inputLangSelect.value,
+        outputLang: outputLangSelect.value
+    };
     try {
         const data = await callApi(payload);
         const result = data.pythonCode;
@@ -215,13 +251,23 @@ async function handleApiCall() {
     }
 }
 
-// --- EVENT LISTENERS ---
+// --- 6. EVENTS ---
 aiProviderSelect.addEventListener('change', populateModels);
 translateButton.addEventListener('click', handleApiCall);
-uploadInput.addEventListener('change', (event) => { const file = event.target.files[0]; if (!file) { uploadedFileName = null; return; } uploadedFileName = file.name.split('.').slice(0, -1).join('.'); const reader = new FileReader(); reader.onload = (e) => { codeInput.value = e.target.result; }; reader.readAsText(file); });
+uploadInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (!file) { uploadedFileName = null; return; }
+    uploadedFileName = file.name.split('.').slice(0, -1).join('.');
+    const reader = new FileReader();
+    reader.onload = (e) => { codeInput.value = e.target.result; };
+    reader.readAsText(file);
+});
 downloadButton.addEventListener('click', () => {
     const outputContent = pythonOutput.value;
-    if (!outputContent || outputContent.startsWith('Error:')) { showNotification('No valid code to download.'); return; }
+    if (!outputContent || outputContent.startsWith('Error:')) {
+        showNotification('No valid code to download.');
+        return;
+    }
     const blob = new Blob([outputContent], { type: 'text/plain' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -231,13 +277,13 @@ downloadButton.addEventListener('click', () => {
     const lang = langKey.toLowerCase();
     const extensionMap = { 'python': 'py', 'javascript': 'js', 'powershell': 'ps1', 'c#': 'cs', 'go': 'go', 'azure cli': 'azcli', 'bicep': 'bicep' };
     const extension = extensionMap[lang] || 'txt';
-    const isCodeAction = ['translate', 'add_comments', 'debug', 'optimize'].includes(action);
-    if (isCodeAction && uploadedFileName) {
-        const suffix = (action === 'translate') ? '' : `_${action}`;
+    if (['translate', 'add_comments', 'debug', 'optimize', 'create'].includes(action) && uploadedFileName) {
+        const suffix = (action === 'translate' || action === 'create') ? '' : `_${action}`;
         filename = `${uploadedFileName}${suffix}.${extension}`;
     } else {
-        switch(action) {
+        switch (action) {
             case 'translate': filename = `translated_script.${extension}`; break;
+            case 'create': filename = `new_script.${extension}`; break;
             case 'optimize': filename = `optimized_script.${extension}`; break;
             case 'explain': filename = 'explanation.txt'; break;
             case 'debug': filename = `debugged_script.${extension}`; break;
@@ -252,7 +298,7 @@ downloadButton.addEventListener('click', () => {
     URL.revokeObjectURL(link.href);
 });
 
-// --- INITIALIZATION ---
+// --- INIT ---
 checkInitialSession();
 populateModels();
 
